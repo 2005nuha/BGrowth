@@ -1,0 +1,12 @@
+package com.example.bgrowth.ui.forgotpassword
+
+import androidx.compose.runtime.Immutable
+
+@Immutable
+data class ForgotPasswordUiState(
+    val email: String = "",
+    val emailError: String? = null,
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null,
+    val codeSentEmail: String? = null
+)
