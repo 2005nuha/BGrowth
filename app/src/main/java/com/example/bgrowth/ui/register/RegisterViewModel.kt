@@ -2,18 +2,18 @@ package com.example.bgrowth.ui.register
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.bgrowth.data.model.RegisterRequest
-import com.example.bgrowth.data.remote.AuthApi
-import com.example.bgrowth.data.remote.RetrofitClient
+import com.example.bgrowth.data.repository.AuthRepository
+import java.io.IOException
 import java.util.concurrent.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 
 class RegisterViewModel(
-    private val authApi: AuthApi = RetrofitClient.authApi
+    private val authRepository: AuthRepository = AuthRepository()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RegisterUiState())
@@ -87,6 +87,12 @@ class RegisterViewModel(
         }
     }
 
+    // Called by RegisterScreen after onRegistrationSuccess has fired, so a
+    // configuration change does not re-trigger navigation.
+    fun consumeRegistrationResult() {
+        _uiState.update { it.copy(registrationResult = null) }
+    }
+
     fun validateForLocalNavigation(): Boolean = validateInputs()
 
     fun register() {
@@ -94,22 +100,16 @@ class RegisterViewModel(
 
         val validState = _uiState.value
         _uiState.update {
-            it.copy(
-                isLoading = true,
-                registrationResult = null,
-                registrationError = null
-            )
+            it.copy(isLoading = true, registrationResult = null, registrationError = null)
         }
 
         viewModelScope.launch {
             try {
-                val response = authApi.register(
-                    RegisterRequest(
-                        name = validState.fullName.trim(),
-                        email = validState.email.trim(),
-                        phone = validState.phoneNumber.trim(),
-                        password = validState.password
-                    )
+                val response = authRepository.register(
+                    firstName = validState.fullName.trim(),
+                    email = validState.email.trim(),
+                    password = validState.password,
+                    passwordConfirm = validState.confirmPassword
                 )
                 _uiState.update {
                     it.copy(
@@ -118,15 +118,31 @@ class RegisterViewModel(
                         registrationError = null
                     )
                 }
-            } catch (exception: CancellationException) {
-                throw exception
-            } catch (exception: Throwable) {
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: HttpException) {
+                val message = when (e.code()) {
+                    422 -> "An account with this email may already exist."
+                    500 -> "Server error. Please try again later."
+                    else -> "Error ${e.code()}. Please try again."
+                }
+                _uiState.update {
+                    it.copy(isLoading = false, registrationResult = null, registrationError = message)
+                }
+            } catch (e: IOException) {
                 _uiState.update {
                     it.copy(
                         isLoading = false,
                         registrationResult = null,
-                        registrationError = exception.message
-                            ?.takeIf(String::isNotBlank)
+                        registrationError = "Cannot reach the server. Check your connection."
+                    )
+                }
+            } catch (e: Throwable) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        registrationResult = null,
+                        registrationError = e.message?.takeIf(String::isNotBlank)
                             ?: "Unable to create your account. Please try again."
                     )
                 }
@@ -136,11 +152,7 @@ class RegisterViewModel(
 
     private fun validateInputs(): Boolean {
         val state = _uiState.value
-        val fullNameError = if (state.fullName.isBlank()) {
-            "Full name is required."
-        } else {
-            null
-        }
+        val fullNameError = if (state.fullName.isBlank()) "Full name is required." else null
         val emailError = when {
             state.email.isBlank() -> "Email address is required."
             !EMAIL_PATTERN.matches(state.email.trim()) -> "Enter a valid email address."
@@ -148,8 +160,7 @@ class RegisterViewModel(
         }
         val phoneNumberError = when {
             state.phoneNumber.isBlank() -> "Phone number is required."
-            !state.phoneNumber.all(::isAllowedPhoneCharacter) ->
-                "Enter a valid phone number."
+            !state.phoneNumber.all(::isAllowedPhoneCharacter) -> "Enter a valid phone number."
             else -> null
         }
         val passwordError = when {
@@ -177,19 +188,13 @@ class RegisterViewModel(
         }
 
         return listOf(
-            fullNameError,
-            emailError,
-            phoneNumberError,
-            passwordError,
-            confirmPasswordError
+            fullNameError, emailError, phoneNumberError, passwordError, confirmPasswordError
         ).all { it == null }
     }
 
     private companion object {
         const val MINIMUM_PASSWORD_LENGTH = 8
-        val EMAIL_PATTERN = Regex(
-            pattern = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
-        )
+        val EMAIL_PATTERN = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
 
         fun isAllowedPhoneCharacter(character: Char): Boolean =
             character.isDigit() || character == '+' || character == '-' ||

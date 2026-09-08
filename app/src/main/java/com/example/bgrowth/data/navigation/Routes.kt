@@ -11,6 +11,7 @@ object Routes {
     const val LOGIN = "login"
     const val FORGOT_PASSWORD = "forgot_password"
     const val RESET_PASSWORD = "reset_password"
+    const val BUSINESS_SETUP = "business_setup"
 
     const val VERIFICATION_MODE_ARGUMENT = "verificationMode"
     const val VERIFICATION_TARGET_ARGUMENT = "verificationTarget"

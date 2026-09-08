@@ -13,18 +13,18 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.bgrowth.ui.businesssetup.BusinessSetupScreen
 import com.example.bgrowth.ui.forgotpassword.ForgotPasswordScreen
 import com.example.bgrowth.ui.login.LoginScreen
+import com.example.bgrowth.ui.login.LoginViewModel
 import com.example.bgrowth.ui.onboarding.OnboardingPagerScreen
 import com.example.bgrowth.ui.register.RegisterScreen
 import com.example.bgrowth.ui.register.RegisterViewModel
 import com.example.bgrowth.ui.resetpassword.ResetPasswordScreen
 import com.example.bgrowth.ui.splash.SplashScreen
-import com.example.bgrowth.ui.verification.ResendOtpAction
 import com.example.bgrowth.ui.verification.VerificationMode
 import com.example.bgrowth.ui.verification.VerificationScreen
 import com.example.bgrowth.ui.verification.VerificationViewModel
-import com.example.bgrowth.ui.verification.VerifyOtpAction
 import kotlinx.coroutines.delay
 
 @Composable
@@ -71,18 +71,12 @@ fun AppNavGraph(
                         launchSingleTop = true
                     }
                 },
-                onCreateAccountClick = {
-                    // TODO: Replace with real backend API
-                    if (registerViewModel.validateForLocalNavigation()) {
-                        val phoneNumber = registerViewModel.uiState.value.phoneNumber.trim()
-                        navController.navigate(
-                            Routes.verification(
-                                verificationTarget = phoneNumber,
-                                verificationMode = VerificationMode.SIGN_UP
-                            )
-                        ) {
-                            launchSingleTop = true
-                        }
+                onRegistrationSuccess = {
+                    // Registration succeeded and the user is automatically logged in
+                    // (the API returns tokens on 201). Navigate directly to the app.
+                    navController.navigate(Routes.BUSINESS_SETUP) {
+                        popUpTo(Routes.REGISTER) { inclusive = true }
+                        launchSingleTop = true
                     }
                 }
             )
@@ -106,12 +100,10 @@ fun AppNavGraph(
                 backStackEntry.arguments
                     ?.getString(Routes.VERIFICATION_MODE_ARGUMENT)
             )
-            val factory = remember(verificationMode) {
-                localVerificationViewModelFactory()
+            val factory = remember {
+                verificationViewModelFactory()
             }
-            val verificationViewModel: VerificationViewModel = viewModel(
-                factory = factory
-            )
+            val verificationViewModel: VerificationViewModel = viewModel(factory = factory)
 
             VerificationScreen(
                 verificationTarget = verificationTarget,
@@ -165,7 +157,10 @@ fun AppNavGraph(
         }
 
         composable(Routes.LOGIN) {
+            val loginViewModel: LoginViewModel = viewModel()
+
             LoginScreen(
+                viewModel = loginViewModel,
                 onBackClick = { navController.popBackStack() },
                 onCreateAccountClick = {
                     navController.navigate(Routes.REGISTER) {
@@ -176,38 +171,38 @@ fun AppNavGraph(
                     navController.navigate(Routes.FORGOT_PASSWORD) {
                         launchSingleTop = true
                     }
+                },
+                onLoginSuccess = {
+                    navController.navigate(Routes.BUSINESS_SETUP) {
+                        popUpTo(Routes.LOGIN) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
+
+        composable(Routes.BUSINESS_SETUP) {
+            BusinessSetupScreen(
+                onBackClick = { navController.popBackStack() },
+                onBusinessSetupSuccess = {
+                    // TODO: Navigate to the main app dashboard once it exists.
                 }
             )
         }
     }
 }
 
-private fun localVerificationViewModelFactory(): ViewModelProvider.Factory =
+// The Django backend does not expose OTP verification endpoints.
+// VerificationViewModel handles null actions gracefully by showing "not available".
+private fun verificationViewModelFactory(): ViewModelProvider.Factory =
     object : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (!modelClass.isAssignableFrom(VerificationViewModel::class.java)) {
                 throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
             }
-
-            return VerificationViewModel(
-                verifyOtpAction = VerifyOtpAction { _, otpCode ->
-                    // TODO: Replace with real OTP verification API
-                    delay(LOCAL_REQUEST_DELAY_MILLIS)
-                    if (otpCode != LOCAL_TEST_OTP) {
-                        throw IllegalArgumentException(
-                            "The code you entered is invalid. Please try again."
-                        )
-                    }
-                },
-                resendOtpAction = ResendOtpAction {
-                    // TODO: Replace with real OTP verification API
-                    delay(LOCAL_REQUEST_DELAY_MILLIS)
-                }
-            ) as T
+            return VerificationViewModel() as T
         }
     }
 
 private const val SPLASH_DURATION_MILLIS = 1_750L
-private const val LOCAL_REQUEST_DELAY_MILLIS = 450L
-private const val LOCAL_TEST_OTP = "123456"

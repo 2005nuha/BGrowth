@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -24,6 +25,7 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -33,10 +35,9 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,6 +49,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.bgrowth.ui.theme.BGrothTheme
 
 private val LoginPrimary = Color(0xFF0F5D46)
@@ -63,49 +65,37 @@ private val LoginSuccess = Color(0xFF1F8A61)
 fun LoginScreen(
     onBackClick: () -> Unit,
     onCreateAccountClick: () -> Unit,
+    onLoginSuccess: () -> Unit,
     modifier: Modifier = Modifier,
+    viewModel: LoginViewModel = viewModel(),
     onForgotPasswordClick: () -> Unit = {},
     onGoogleClick: () -> Unit = {}
 ) {
-    var email by rememberSaveable { mutableStateOf("") }
-    var password by rememberSaveable { mutableStateOf("") }
-    var message by rememberSaveable { mutableStateOf<String?>(null) }
-    var isError by rememberSaveable { mutableStateOf(false) }
+    val uiState by viewModel.uiState.collectAsState()
+
+    // Navigate when the ViewModel signals a successful login.
+    // consumeLoginSuccess() prevents re-navigation on configuration change.
+    LaunchedEffect(uiState.isLoginSuccessful) {
+        if (uiState.isLoginSuccessful) {
+            viewModel.consumeLoginSuccess()
+            onLoginSuccess()
+        }
+    }
+
+    // Combine field-level and API-level errors into a single message string
+    // so the existing LoginContent layout (single message slot) works unchanged.
+    val message = uiState.loginError ?: uiState.emailError ?: uiState.passwordError
+    val isError = message != null
 
     LoginContent(
-        email = email,
-        password = password,
+        email = uiState.email,
+        password = uiState.password,
         message = message,
         isError = isError,
-        onEmailChange = {
-            email = it
-            message = null
-        },
-        onPasswordChange = {
-            password = it
-            message = null
-        },
-        onLoginClick = {
-            // TODO: Replace with real backend API
-            val hasValidLookingEmail = email.contains('@') &&
-                email.substringAfter('@', missingDelimiterValue = "").contains('.')
-            when {
-                !hasValidLookingEmail -> {
-                    message = "Enter a valid email address."
-                    isError = true
-                }
-
-                password.isBlank() -> {
-                    message = "Password is required."
-                    isError = true
-                }
-
-                else -> {
-                    message = "Login details look good. Authentication is disabled for testing."
-                    isError = false
-                }
-            }
-        },
+        isLoading = uiState.isLoading,
+        onEmailChange = viewModel::onEmailChange,
+        onPasswordChange = viewModel::onPasswordChange,
+        onLoginClick = viewModel::login,
         onBackClick = onBackClick,
         onForgotPasswordClick = onForgotPasswordClick,
         onGoogleClick = onGoogleClick,
@@ -120,6 +110,7 @@ private fun LoginContent(
     password: String,
     message: String?,
     isError: Boolean,
+    isLoading: Boolean,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
     onLoginClick: () -> Unit,
@@ -199,6 +190,7 @@ private fun LoginContent(
                             tint = LoginSecondaryText
                         )
                     },
+                    enabled = !isLoading,
                     singleLine = true,
                     shape = RoundedCornerShape(14.dp),
                     keyboardOptions = KeyboardOptions(
@@ -222,6 +214,7 @@ private fun LoginContent(
                             tint = LoginSecondaryText
                         )
                     },
+                    enabled = !isLoading,
                     singleLine = true,
                     shape = RoundedCornerShape(14.dp),
                     visualTransformation = PasswordVisualTransformation(),
@@ -255,21 +248,32 @@ private fun LoginContent(
 
                 Button(
                     onClick = onLoginClick,
+                    enabled = !isLoading,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = LoginPrimary,
-                        contentColor = LoginSurface
+                        contentColor = LoginSurface,
+                        disabledContainerColor = LoginPrimary.copy(alpha = 0.65f),
+                        disabledContentColor = LoginSurface
                     ),
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
                 ) {
-                    Text(
-                        text = "Log in",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(22.dp),
+                            color = LoginSurface,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(
+                            text = "Log in",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 }
 
                 message?.let {
@@ -290,26 +294,21 @@ private fun LoginContent(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    HorizontalDivider(
-                        modifier = Modifier.weight(1f),
-                        color = LoginBorder
-                    )
+                    HorizontalDivider(modifier = Modifier.weight(1f), color = LoginBorder)
                     Text(
                         text = "or",
                         modifier = Modifier.padding(horizontal = 14.dp),
                         color = LoginMutedText,
                         fontSize = 14.sp
                     )
-                    HorizontalDivider(
-                        modifier = Modifier.weight(1f),
-                        color = LoginBorder
-                    )
+                    HorizontalDivider(modifier = Modifier.weight(1f), color = LoginBorder)
                 }
 
                 Spacer(modifier = Modifier.height(if (compactHeight) 16.dp else 24.dp))
 
                 OutlinedButton(
                     onClick = onGoogleClick,
+                    enabled = !isLoading,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
@@ -344,7 +343,7 @@ private fun LoginContent(
             ) {
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
-                    text = "Don’t have an account?",
+                    text = "Don't have an account?",
                     color = LoginMutedText,
                     fontSize = 14.sp
                 )
@@ -385,8 +384,18 @@ private fun loginTextFieldColors() = OutlinedTextFieldDefaults.colors(
 @Composable
 private fun LoginDefaultPreview() {
     BGrothTheme {
-        LoginScreen(
+        LoginContent(
+            email = "",
+            password = "",
+            message = null,
+            isError = false,
+            isLoading = false,
+            onEmailChange = {},
+            onPasswordChange = {},
+            onLoginClick = {},
             onBackClick = {},
+            onForgotPasswordClick = {},
+            onGoogleClick = {},
             onCreateAccountClick = {}
         )
     }
@@ -406,6 +415,33 @@ private fun LoginErrorPreview() {
             password = "",
             message = "Enter a valid email address.",
             isError = true,
+            isLoading = false,
+            onEmailChange = {},
+            onPasswordChange = {},
+            onLoginClick = {},
+            onBackClick = {},
+            onForgotPasswordClick = {},
+            onGoogleClick = {},
+            onCreateAccountClick = {}
+        )
+    }
+}
+
+@Preview(
+    name = "Login - Loading",
+    showBackground = true,
+    widthDp = 390,
+    heightDp = 844
+)
+@Composable
+private fun LoginLoadingPreview() {
+    BGrothTheme {
+        LoginContent(
+            email = "hazem@example.com",
+            password = "password123",
+            message = null,
+            isError = false,
+            isLoading = true,
             onEmailChange = {},
             onPasswordChange = {},
             onLoginClick = {},

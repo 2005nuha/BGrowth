@@ -2,7 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Required for all HTTP/HTTPS network calls via Retrofit. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
     <application
+        android:name=".BGrowthApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -10,7 +14,15 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.BGroth">
+        android:theme="@style/Theme.BGroth"
+        android:usesCleartextTraffic="true">
+        <!--
+            usesCleartextTraffic = true allows plain HTTP traffic to the local
+            Laravel development server (http://YOUR_IP:8000).
+            The local dev server does not run TLS, so this flag is required.
+            REMOVE or set to false when the production server uses HTTPS.
+        -->
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

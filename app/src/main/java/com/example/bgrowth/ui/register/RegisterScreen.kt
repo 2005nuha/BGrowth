@@ -31,6 +31,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
@@ -57,16 +58,25 @@ private val RegisterText = Color(0xFF173B31)
 private val RegisterSecondaryText = Color(0xFF68756F)
 private val RegisterFieldBorder = Color(0xFFD7DDD9)
 private val RegisterError = Color(0xFFBA1A1A)
-private val RegisterSuccess = Color(0xFF2E6A4F)
 
 @Composable
 fun RegisterScreen(
     modifier: Modifier = Modifier,
     viewModel: RegisterViewModel = viewModel(),
     onLoginClick: () -> Unit = {},
+    onRegistrationSuccess: () -> Unit = {},
     onCreateAccountClick: (() -> Unit)? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
+    // Navigate when the API returns a successful RegisterResponse.
+    // consumeRegistrationResult() prevents re-navigation on configuration change.
+    LaunchedEffect(uiState.registrationResult) {
+        if (uiState.registrationResult != null) {
+            viewModel.consumeRegistrationResult()
+            onRegistrationSuccess()
+        }
+    }
 
     RegisterScreen(
         uiState = uiState,
@@ -277,18 +287,6 @@ fun RegisterScreen(
                     text = error,
                     modifier = Modifier.fillMaxWidth(),
                     color = RegisterError,
-                    fontSize = 13.sp,
-                    lineHeight = 18.sp,
-                    textAlign = TextAlign.Center
-                )
-            }
-
-            uiState.registrationResult?.let { result ->
-                Spacer(modifier = Modifier.height(10.dp))
-                Text(
-                    text = result.message,
-                    modifier = Modifier.fillMaxWidth(),
-                    color = RegisterSuccess,
                     fontSize = 13.sp,
                     lineHeight = 18.sp,
                     textAlign = TextAlign.Center
