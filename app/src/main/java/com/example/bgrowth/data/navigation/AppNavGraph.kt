@@ -113,7 +113,8 @@ fun AppNavGraph(
                 onVerificationSuccess = {
                     when (verificationMode) {
                         VerificationMode.SIGN_UP -> {
-                            navController.navigate(Routes.LOGIN) {
+                            navController.navigate(Routes.BUSINESS_SETUP) {
+                                popUpTo(Routes.VERIFICATION_ROUTE) { inclusive = true }
                                 launchSingleTop = true
                             }
                         }
@@ -162,6 +163,12 @@ fun AppNavGraph(
             LoginScreen(
                 viewModel = loginViewModel,
                 onBackClick = { navController.popBackStack() },
+                onLoginSuccess = {
+                    navController.navigate(Routes.BUSINESS_SETUP) {
+                        popUpTo(Routes.LOGIN) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
                 onCreateAccountClick = {
                     navController.navigate(Routes.REGISTER) {
                         launchSingleTop = true
@@ -187,6 +194,13 @@ fun AppNavGraph(
                 onBusinessSetupSuccess = {
                     // TODO: Navigate to the main app dashboard once it exists.
                 }
+            )
+        }
+
+        composable(Routes.BUSINESS_SETUP) {
+            BusinessSetupScreen(
+                onBackClick = { navController.popBackStack() },
+                onBusinessSetupSuccess = {}
             )
         }
     }

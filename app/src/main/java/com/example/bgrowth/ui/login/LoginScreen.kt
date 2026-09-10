@@ -73,8 +73,6 @@ fun LoginScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    // Navigate when the ViewModel signals a successful login.
-    // consumeLoginSuccess() prevents re-navigation on configuration change.
     LaunchedEffect(uiState.isLoginSuccessful) {
         if (uiState.isLoginSuccessful) {
             viewModel.consumeLoginSuccess()
@@ -82,9 +80,9 @@ fun LoginScreen(
         }
     }
 
-    // Combine field-level and API-level errors into a single message string
-    // so the existing LoginContent layout (single message slot) works unchanged.
-    val message = uiState.loginError ?: uiState.emailError ?: uiState.passwordError
+    val message =
+        uiState.loginError ?: uiState.emailError ?: uiState.passwordError
+
     val isError = message != null
 
     LoginContent(
@@ -129,7 +127,9 @@ private fun LoginContent(
     ) {
         val compactHeight = maxHeight < 720.dp
 
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -137,7 +137,9 @@ private fun LoginContent(
                     .padding(horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onBackClick) {
+                IconButton(
+                    onClick = onBackClick
+                ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
@@ -153,7 +155,11 @@ private fun LoginContent(
                     .padding(horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(modifier = Modifier.height(if (compactHeight) 26.dp else 78.dp))
+                Spacer(
+                    modifier = Modifier.height(
+                        if (compactHeight) 26.dp else 78.dp
+                    )
+                )
 
                 Text(
                     text = "Welcome Back",
@@ -165,7 +171,9 @@ private fun LoginContent(
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(
+                    modifier = Modifier.height(8.dp)
+                )
 
                 Text(
                     text = "Log in to continue managing your business.",
@@ -176,13 +184,19 @@ private fun LoginContent(
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(if (compactHeight) 22.dp else 30.dp))
+                Spacer(
+                    modifier = Modifier.height(
+                        if (compactHeight) 22.dp else 30.dp
+                    )
+                )
 
                 OutlinedTextField(
                     value = email,
                     onValueChange = onEmailChange,
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Email Address") },
+                    label = {
+                        Text("Email Address")
+                    },
                     trailingIcon = {
                         Icon(
                             imageVector = Icons.Filled.Email,
@@ -200,13 +214,17 @@ private fun LoginContent(
                     colors = loginTextFieldColors()
                 )
 
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(
+                    modifier = Modifier.height(14.dp)
+                )
 
                 OutlinedTextField(
                     value = password,
                     onValueChange = onPasswordChange,
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Password") },
+                    label = {
+                        Text("Password")
+                    },
                     trailingIcon = {
                         Icon(
                             imageVector = Icons.Filled.Lock,
@@ -233,7 +251,9 @@ private fun LoginContent(
                 ) {
                     TextButton(
                         onClick = onForgotPasswordClick,
-                        contentPadding = PaddingValues(horizontal = 0.dp)
+                        contentPadding = PaddingValues(
+                            horizontal = 0.dp
+                        )
                     ) {
                         Text(
                             text = "Forgot Password?",
@@ -244,7 +264,11 @@ private fun LoginContent(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(if (compactHeight) 10.dp else 18.dp))
+                Spacer(
+                    modifier = Modifier.height(
+                        if (compactHeight) 10.dp else 18.dp
+                    )
+                )
 
                 Button(
                     onClick = onLoginClick,
@@ -256,10 +280,14 @@ private fun LoginContent(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = LoginPrimary,
                         contentColor = LoginSurface,
-                        disabledContainerColor = LoginPrimary.copy(alpha = 0.65f),
+                        disabledContainerColor = LoginPrimary.copy(
+                            alpha = 0.65f
+                        ),
                         disabledContentColor = LoginSurface
                     ),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+                    elevation = ButtonDefaults.buttonElevation(
+                        defaultElevation = 0.dp
+                    )
                 ) {
                     if (isLoading) {
                         CircularProgressIndicator(
@@ -277,34 +305,59 @@ private fun LoginContent(
                 }
 
                 message?.let {
-                    Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(
+                        modifier = Modifier.height(14.dp)
+                    )
+
                     Text(
                         text = it,
                         modifier = Modifier.fillMaxWidth(),
-                        color = if (isError) LoginError else LoginSuccess,
+                        color = if (isError) {
+                            LoginError
+                        } else {
+                            LoginSuccess
+                        },
                         fontSize = 13.sp,
                         lineHeight = 18.sp,
                         textAlign = TextAlign.Center
                     )
                 }
 
-                Spacer(modifier = Modifier.height(if (compactHeight) 16.dp else 24.dp))
+                Spacer(
+                    modifier = Modifier.height(
+                        if (compactHeight) 16.dp else 24.dp
+                    )
+                )
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    HorizontalDivider(modifier = Modifier.weight(1f), color = LoginBorder)
+                    HorizontalDivider(
+                        modifier = Modifier.weight(1f),
+                        color = LoginBorder
+                    )
+
                     Text(
                         text = "or",
-                        modifier = Modifier.padding(horizontal = 14.dp),
+                        modifier = Modifier.padding(
+                            horizontal = 14.dp
+                        ),
                         color = LoginMutedText,
                         fontSize = 14.sp
                     )
-                    HorizontalDivider(modifier = Modifier.weight(1f), color = LoginBorder)
+
+                    HorizontalDivider(
+                        modifier = Modifier.weight(1f),
+                        color = LoginBorder
+                    )
                 }
 
-                Spacer(modifier = Modifier.height(if (compactHeight) 16.dp else 24.dp))
+                Spacer(
+                    modifier = Modifier.height(
+                        if (compactHeight) 16.dp else 24.dp
+                    )
+                )
 
                 OutlinedButton(
                     onClick = onGoogleClick,
@@ -313,13 +366,15 @@ private fun LoginContent(
                         .fillMaxWidth()
                         .height(56.dp),
                     shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, LoginBorder),
+                    border = BorderStroke(
+                        1.dp,
+                        LoginBorder
+                    ),
                     colors = ButtonDefaults.outlinedButtonColors(
                         containerColor = LoginSurface,
                         contentColor = LoginPrimary
                     )
                 ) {
-                    // Add the official Google asset at the start when ic_google is supplied.
                     Box(
                         modifier = Modifier.fillMaxWidth(),
                         contentAlignment = Alignment.Center
@@ -332,24 +387,39 @@ private fun LoginContent(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(
+                    modifier = Modifier.height(24.dp)
+                )
             }
 
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = if (compactHeight) 8.dp else 12.dp),
+                    .padding(
+                        horizontal = 24.dp,
+                        vertical = if (compactHeight) {
+                            8.dp
+                        } else {
+                            12.dp
+                        }
+                    ),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Spacer(modifier = Modifier.weight(1f))
+                Spacer(
+                    modifier = Modifier.weight(1f)
+                )
+
                 Text(
                     text = "Don't have an account?",
                     color = LoginMutedText,
                     fontSize = 14.sp
                 )
+
                 TextButton(
                     onClick = onCreateAccountClick,
-                    contentPadding = PaddingValues(horizontal = 5.dp)
+                    contentPadding = PaddingValues(
+                        horizontal = 5.dp
+                    )
                 ) {
                     Text(
                         text = "Create Account",
@@ -358,22 +428,26 @@ private fun LoginContent(
                         fontWeight = FontWeight.SemiBold
                     )
                 }
-                Spacer(modifier = Modifier.weight(1f))
+
+                Spacer(
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
     }
 }
 
 @Composable
-private fun loginTextFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = LoginPrimary,
-    unfocusedBorderColor = LoginBorder,
-    focusedLabelColor = LoginPrimary,
-    unfocusedLabelColor = LoginSecondaryText,
-    cursorColor = LoginPrimary,
-    focusedContainerColor = LoginSurface,
-    unfocusedContainerColor = LoginSurface
-)
+private fun loginTextFieldColors() =
+    OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = LoginPrimary,
+        unfocusedBorderColor = LoginBorder,
+        focusedLabelColor = LoginPrimary,
+        unfocusedLabelColor = LoginSecondaryText,
+        cursorColor = LoginPrimary,
+        focusedContainerColor = LoginSurface,
+        unfocusedContainerColor = LoginSurface
+    )
 
 @Preview(
     name = "Login - Default",
