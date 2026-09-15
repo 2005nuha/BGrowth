@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    private const val BASE_URL = "https://cnet-fog-release-epa.trycloudflare.com/"
+    private const val BASE_URL = "https://english-bras-worker-nick.trycloudflare.com/"
 
     private val authInterceptor = Interceptor { chain ->
         val token = BGrowthApp.instance.sessionManager.getToken()

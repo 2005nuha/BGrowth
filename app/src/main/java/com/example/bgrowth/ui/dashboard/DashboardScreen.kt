@@ -69,6 +69,8 @@ fun DashboardScreen(
     onMenuClick: () -> Unit,
     onAddProductClick: () -> Unit,
     onRecordSaleClick: () -> Unit,
+    onSalesClick: () -> Unit,
+    onProductsClick: () -> Unit,
     onAddExpenseClick: () -> Unit,
     onViewReportsClick: () -> Unit,
     onLowStockClick: () -> Unit,
@@ -83,6 +85,8 @@ fun DashboardScreen(
         onMenuClick = onMenuClick,
         onAddProductClick = onAddProductClick,
         onRecordSaleClick = onRecordSaleClick,
+        onSalesClick = onSalesClick,
+        onProductsClick = onProductsClick,
         onAddExpenseClick = onAddExpenseClick,
         onViewReportsClick = onViewReportsClick,
         onLowStockClick = onLowStockClick,
@@ -97,6 +101,8 @@ fun DashboardScreen(
     onMenuClick: () -> Unit,
     onAddProductClick: () -> Unit,
     onRecordSaleClick: () -> Unit,
+    onSalesClick: () -> Unit,
+    onProductsClick: () -> Unit,
     onAddExpenseClick: () -> Unit,
     onViewReportsClick: () -> Unit,
     onLowStockClick: () -> Unit,
@@ -135,7 +141,11 @@ fun DashboardScreen(
             }
         }
 
-        BottomNavigationBar(onMainAddClick = onMainAddClick)
+        BottomNavigationBar(
+            onSalesClick = onSalesClick,
+            onProductsClick = onProductsClick,
+            onMainAddClick = onMainAddClick
+        )
     }
 }
 
@@ -181,7 +191,9 @@ private fun DashboardContent(
         Spacer(modifier = Modifier.height(24.dp))
 
         SectionTitle(text = "Quick Actions")
+
         Spacer(modifier = Modifier.height(12.dp))
+
         QuickActionsGrid(
             onRecordSaleClick = onRecordSaleClick,
             onAddExpenseClick = onAddExpenseClick,
@@ -213,7 +225,9 @@ private fun DashboardHeader(
             verticalAlignment = Alignment.CenterVertically
         ) {
             BrandLogo()
+
             Spacer(modifier = Modifier.width(10.dp))
+
             Text(
                 text = "BGrowth",
                 color = colors.primary,
@@ -221,8 +235,12 @@ private fun DashboardHeader(
                 fontWeight = FontWeight.Bold,
                 letterSpacing = (-0.4).sp
             )
+
             Spacer(modifier = Modifier.weight(1f))
-            IconButton(onClick = onMenuClick) {
+
+            IconButton(
+                onClick = onMenuClick
+            ) {
                 Icon(
                     imageVector = Icons.Filled.Menu,
                     contentDescription = "Open menu",
@@ -240,13 +258,16 @@ private fun DashboardHeader(
             lineHeight = 32.sp,
             fontWeight = FontWeight.Bold
         )
+
         Spacer(modifier = Modifier.height(5.dp))
+
         Text(
             text = "Here's a quick look at how your business is doing today.",
             color = BGrowthSecondaryText,
             fontSize = 14.sp,
             lineHeight = 21.sp
         )
+
         Spacer(modifier = Modifier.height(22.dp))
     }
 }
@@ -254,6 +275,7 @@ private fun DashboardHeader(
 @Composable
 private fun BrandLogo() {
     val colors = MaterialTheme.colorScheme
+
     Box(
         modifier = Modifier
             .size(40.dp)
@@ -268,19 +290,34 @@ private fun BrandLogo() {
             lineHeight = 30.sp,
             fontWeight = FontWeight.Black
         )
+
         Row(
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(start = 7.dp, bottom = 6.dp),
+                .padding(
+                    start = 7.dp,
+                    bottom = 6.dp
+                ),
             horizontalArrangement = Arrangement.spacedBy(2.dp),
             verticalAlignment = Alignment.Bottom
         ) {
-            listOf(4.dp, 7.dp, 10.dp).forEach { barHeight ->
+            listOf(
+                4.dp,
+                7.dp,
+                10.dp
+            ).forEach { barHeight ->
+
                 Box(
                     modifier = Modifier
                         .width(3.dp)
                         .height(barHeight)
-                        .background(BGrowthAccent, RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp))
+                        .background(
+                            BGrowthAccent,
+                            RoundedCornerShape(
+                                topStart = 2.dp,
+                                topEnd = 2.dp
+                            )
+                        )
                 )
             }
         }
@@ -293,21 +330,31 @@ private fun EmptyDashboardCard(
     onRecordSaleClick: () -> Unit
 ) {
     val colors = MaterialTheme.colorScheme
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
         color = colors.surface,
-        border = BorderStroke(1.dp, BGrowthBorder),
+        border = BorderStroke(
+            1.dp,
+            BGrowthBorder
+        ),
         shadowElevation = 1.dp
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 22.dp, vertical = 26.dp),
+            modifier = Modifier.padding(
+                horizontal = 22.dp,
+                vertical = 26.dp
+            ),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(
                 modifier = Modifier
                     .size(68.dp)
-                    .background(colors.surfaceVariant, CircleShape),
+                    .background(
+                        colors.surfaceVariant,
+                        CircleShape
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -317,7 +364,9 @@ private fun EmptyDashboardCard(
                     tint = colors.primary
                 )
             }
+
             Spacer(modifier = Modifier.height(18.dp))
+
             Text(
                 text = "Your dashboard is ready",
                 color = colors.onSurface,
@@ -326,7 +375,9 @@ private fun EmptyDashboardCard(
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
+
             Spacer(modifier = Modifier.height(8.dp))
+
             Text(
                 text = "Start by adding your first product or recording your first sale.",
                 color = BGrowthSecondaryText,
@@ -334,7 +385,9 @@ private fun EmptyDashboardCard(
                 lineHeight = 21.sp,
                 textAlign = TextAlign.Center
             )
+
             Spacer(modifier = Modifier.height(22.dp))
+
             Button(
                 onClick = onAddProductClick,
                 modifier = Modifier
@@ -345,27 +398,44 @@ private fun EmptyDashboardCard(
                     containerColor = colors.primary,
                     contentColor = colors.onPrimary
                 ),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+                elevation = ButtonDefaults.buttonElevation(
+                    defaultElevation = 0.dp
+                )
             ) {
                 Icon(
                     imageVector = Icons.Filled.Add,
                     contentDescription = null,
                     modifier = Modifier.size(19.dp)
                 )
+
                 Spacer(modifier = Modifier.width(7.dp))
-                Text("Add First Product", fontWeight = FontWeight.SemiBold)
+
+                Text(
+                    text = "Add First Product",
+                    fontWeight = FontWeight.SemiBold
+                )
             }
+
             Spacer(modifier = Modifier.height(10.dp))
+
             OutlinedButton(
                 onClick = onRecordSaleClick,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
                 shape = RoundedCornerShape(14.dp),
-                border = BorderStroke(1.dp, colors.primary),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.primary)
+                border = BorderStroke(
+                    1.dp,
+                    colors.primary
+                ),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = colors.primary
+                )
             ) {
-                Text("Record First sale", fontWeight = FontWeight.SemiBold)
+                Text(
+                    text = "Record First sale",
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
     }
@@ -376,7 +446,10 @@ private fun PopulatedDashboardContent(
     uiState: DashboardUiState,
     onLowStockClick: () -> Unit
 ) {
-    SectionTitle(text = "Today's Summary")
+    SectionTitle(
+        text = "Today's Summary"
+    )
+
     Spacer(modifier = Modifier.height(12.dp))
 
     Row(
@@ -391,6 +464,7 @@ private fun PopulatedDashboardContent(
             icon = Icons.Filled.ShoppingCart,
             modifier = Modifier.weight(1f)
         )
+
         SummaryCard(
             title = "Today's Expenses",
             value = formatCurrency(uiState.todayExpenses),
@@ -402,9 +476,17 @@ private fun PopulatedDashboardContent(
     }
 
     Spacer(modifier = Modifier.height(12.dp))
-    NetProfitCard(value = uiState.netProfit)
+
+    NetProfitCard(
+        value = uiState.netProfit
+    )
+
     Spacer(modifier = Modifier.height(12.dp))
-    LowStockCard(count = uiState.lowStockCount, onClick = onLowStockClick)
+
+    LowStockCard(
+        count = uiState.lowStockCount,
+        onClick = onLowStockClick
+    )
 }
 
 @Composable
@@ -417,18 +499,29 @@ private fun SummaryCard(
     modifier: Modifier = Modifier
 ) {
     val colors = MaterialTheme.colorScheme
+
     Surface(
         modifier = modifier.height(146.dp),
         shape = RoundedCornerShape(18.dp),
         color = colors.surface,
-        border = BorderStroke(1.dp, BGrowthBorder)
+        border = BorderStroke(
+            1.dp,
+            BGrowthBorder
+        )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Box(
                     modifier = Modifier
                         .size(34.dp)
-                        .background(colors.surfaceVariant, RoundedCornerShape(10.dp)),
+                        .background(
+                            colors.surfaceVariant,
+                            RoundedCornerShape(10.dp)
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -438,18 +531,34 @@ private fun SummaryCard(
                         tint = colors.primary
                     )
                 }
+
                 Spacer(modifier = Modifier.weight(1f))
+
                 trendPercent?.let { trend ->
-                    val favorable = if (positiveTrendIsFavorable) trend >= 0 else trend <= 0
+
+                    val favorable =
+                        if (positiveTrendIsFavorable) {
+                            trend >= 0
+                        } else {
+                            trend <= 0
+                        }
+
                     Text(
                         text = formatTrend(trend),
-                        color = if (favorable) colors.secondary else BGrowthError,
+                        color =
+                            if (favorable) {
+                                colors.secondary
+                            } else {
+                                BGrowthError
+                            },
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
             }
+
             Spacer(modifier = Modifier.height(14.dp))
+
             Text(
                 text = title,
                 color = BGrowthSecondaryText,
@@ -458,7 +567,9 @@ private fun SummaryCard(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+
             Spacer(modifier = Modifier.height(3.dp))
+
             Text(
                 text = value,
                 color = colors.onSurface,
@@ -473,21 +584,32 @@ private fun SummaryCard(
 }
 
 @Composable
-private fun NetProfitCard(value: Double) {
+private fun NetProfitCard(
+    value: Double
+) {
     val colors = MaterialTheme.colorScheme
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         color = colors.primary
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 18.dp, vertical = 17.dp),
+            modifier = Modifier.padding(
+                horizontal = 18.dp,
+                vertical = 17.dp
+            ),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
                     .size(42.dp)
-                    .background(Color.White.copy(alpha = 0.14f), CircleShape),
+                    .background(
+                        Color.White.copy(
+                            alpha = 0.14f
+                        ),
+                        CircleShape
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -497,13 +619,18 @@ private fun NetProfitCard(value: Double) {
                     modifier = Modifier.size(21.dp)
                 )
             }
+
             Spacer(modifier = Modifier.width(13.dp))
+
             Column {
                 Text(
                     text = "Net Profit",
-                    color = Color.White.copy(alpha = 0.78f),
+                    color = Color.White.copy(
+                        alpha = 0.78f
+                    ),
                     fontSize = 13.sp
                 )
+
                 Text(
                     text = formatCurrency(value),
                     color = Color.White,
@@ -517,25 +644,42 @@ private fun NetProfitCard(value: Double) {
 }
 
 @Composable
-private fun LowStockCard(count: Int, onClick: () -> Unit) {
+private fun LowStockCard(
+    count: Int,
+    onClick: () -> Unit
+) {
     val colors = MaterialTheme.colorScheme
+
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .clickable(onClick = onClick),
+            .clip(
+                RoundedCornerShape(18.dp)
+            )
+            .clickable(
+                onClick = onClick
+            ),
         shape = RoundedCornerShape(18.dp),
         color = Color(0xFFFFF7E7),
-        border = BorderStroke(1.dp, Color(0xFFF1DFC0))
+        border = BorderStroke(
+            1.dp,
+            Color(0xFFF1DFC0)
+        )
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
+            modifier = Modifier.padding(
+                horizontal = 16.dp,
+                vertical = 16.dp
+            ),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
                     .size(42.dp)
-                    .background(Color(0xFFFFE9BE), CircleShape),
+                    .background(
+                        Color(0xFFFFE9BE),
+                        CircleShape
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -545,22 +689,36 @@ private fun LowStockCard(count: Int, onClick: () -> Unit) {
                     fontWeight = FontWeight.Bold
                 )
             }
+
             Spacer(modifier = Modifier.width(13.dp))
-            Column(modifier = Modifier.weight(1f)) {
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
                 Text(
                     text = "Low Stock Alert",
                     color = colors.onSurface,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold
                 )
+
                 Spacer(modifier = Modifier.height(2.dp))
+
                 Text(
-                    text = "$count ${if (count == 1) "item is" else "items are"} running low. Tap to restock.",
+                    text =
+                        "$count ${
+                            if (count == 1) {
+                                "item is"
+                            } else {
+                                "items are"
+                            }
+                        } running low. Tap to restock.",
                     color = BGrowthSecondaryText,
                     fontSize = 12.sp,
                     lineHeight = 18.sp
                 )
             }
+
             Text(
                 text = "›",
                 color = Color(0xFF9A6512),
@@ -579,33 +737,74 @@ private fun QuickActionsGrid(
     onViewReportsClick: () -> Unit
 ) {
     val actions = listOf(
-        QuickAction("Record Sale", Icons.Filled.ShoppingCart, onRecordSaleClick),
-        QuickAction("Add Expense", Icons.AutoMirrored.Filled.List, onAddExpenseClick),
-        QuickAction("Add Product", Icons.Filled.Add, onAddProductClick),
-        QuickAction("View Reports", Icons.Filled.Info, onViewReportsClick)
+        QuickAction(
+            "Record Sale",
+            Icons.Filled.ShoppingCart,
+            onRecordSaleClick
+        ),
+        QuickAction(
+            "Add Expense",
+            Icons.AutoMirrored.Filled.List,
+            onAddExpenseClick
+        ),
+        QuickAction(
+            "Add Product",
+            Icons.Filled.Add,
+            onAddProductClick
+        ),
+        QuickAction(
+            "View Reports",
+            Icons.Filled.Info,
+            onViewReportsClick
+        )
     )
 
-    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+    BoxWithConstraints(
+        modifier = Modifier.fillMaxWidth()
+    ) {
         if (maxWidth < 350.dp) {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                actions.chunked(2).forEach { rowActions ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        rowActions.forEach { action ->
-                            QuickActionItem(action = action, modifier = Modifier.weight(1f))
+
+            Column(
+                verticalArrangement =
+                    Arrangement.spacedBy(10.dp)
+            ) {
+                actions.chunked(2)
+                    .forEach { rowActions ->
+
+                        Row(
+                            modifier =
+                                Modifier.fillMaxWidth(),
+                            horizontalArrangement =
+                                Arrangement.spacedBy(
+                                    10.dp
+                                )
+                        ) {
+                            rowActions.forEach { action ->
+
+                                QuickActionItem(
+                                    action = action,
+                                    modifier =
+                                        Modifier.weight(1f)
+                                )
+                            }
                         }
                     }
-                }
             }
+
         } else {
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement =
+                    Arrangement.spacedBy(10.dp)
             ) {
                 actions.forEach { action ->
-                    QuickActionItem(action = action, modifier = Modifier.weight(1f))
+
+                    QuickActionItem(
+                        action = action,
+                        modifier =
+                            Modifier.weight(1f)
+                    )
                 }
             }
         }
@@ -613,26 +812,45 @@ private fun QuickActionsGrid(
 }
 
 @Composable
-private fun QuickActionItem(action: QuickAction, modifier: Modifier = Modifier) {
+private fun QuickActionItem(
+    action: QuickAction,
+    modifier: Modifier = Modifier
+) {
     val colors = MaterialTheme.colorScheme
+
     Surface(
         modifier = modifier
             .height(102.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .clickable(onClick = action.onClick),
+            .clip(
+                RoundedCornerShape(16.dp)
+            )
+            .clickable(
+                onClick = action.onClick
+            ),
         shape = RoundedCornerShape(16.dp),
         color = colors.surface,
-        border = BorderStroke(1.dp, BGrowthBorder)
+        border = BorderStroke(
+            1.dp,
+            BGrowthBorder
+        )
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 5.dp, vertical = 13.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            modifier = Modifier.padding(
+                horizontal = 5.dp,
+                vertical = 13.dp
+            ),
+            horizontalAlignment =
+                Alignment.CenterHorizontally,
+            verticalArrangement =
+                Arrangement.Center
         ) {
             Box(
                 modifier = Modifier
                     .size(38.dp)
-                    .background(colors.surfaceVariant, RoundedCornerShape(11.dp)),
+                    .background(
+                        colors.surfaceVariant,
+                        RoundedCornerShape(11.dp)
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -642,7 +860,9 @@ private fun QuickActionItem(action: QuickAction, modifier: Modifier = Modifier) 
                     tint = colors.primary
                 )
             }
+
             Spacer(modifier = Modifier.height(8.dp))
+
             Text(
                 text = action.label,
                 color = colors.onSurface,
@@ -659,30 +879,45 @@ private fun QuickActionItem(action: QuickAction, modifier: Modifier = Modifier) 
 @Composable
 private fun NextStepsCard() {
     val colors = MaterialTheme.colorScheme
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         color = colors.surfaceVariant,
-        border = BorderStroke(1.dp, BGrowthBorder)
+        border = BorderStroke(
+            1.dp,
+            BGrowthBorder
+        )
     ) {
-        Column(modifier = Modifier.padding(18.dp)) {
+        Column(
+            modifier = Modifier.padding(18.dp)
+        ) {
             Text(
                 text = "What happens next ?",
                 color = colors.onSurface,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold
             )
+
             Spacer(modifier = Modifier.height(15.dp))
+
             listOf(
                 "Add Products",
                 "Record sales",
                 "Track profit automatically"
             ).forEachIndexed { index, label ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
+
+                Row(
+                    verticalAlignment =
+                        Alignment.CenterVertically
+                ) {
                     Box(
                         modifier = Modifier
                             .size(28.dp)
-                            .background(colors.primary, CircleShape),
+                            .background(
+                                colors.primary,
+                                CircleShape
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -692,7 +927,11 @@ private fun NextStepsCard() {
                             fontWeight = FontWeight.Bold
                         )
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Spacer(
+                        modifier = Modifier.width(12.dp)
+                    )
+
                     Text(
                         text = label,
                         color = BGrowthSecondaryText,
@@ -700,22 +939,37 @@ private fun NextStepsCard() {
                         fontWeight = FontWeight.Medium
                     )
                 }
-                if (index < 2) Spacer(modifier = Modifier.height(12.dp))
+
+                if (index < 2) {
+                    Spacer(
+                        modifier = Modifier.height(12.dp)
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun BottomNavigationBar(onMainAddClick: () -> Unit) {
+private fun BottomNavigationBar(
+    onSalesClick: () -> Unit,
+    onProductsClick: () -> Unit,
+    onMainAddClick: () -> Unit
+) {
     val colors = MaterialTheme.colorScheme
+
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .height(76.dp)
-            .shadow(elevation = 10.dp),
+            .shadow(
+                elevation = 10.dp
+            ),
         color = colors.surface,
-        border = BorderStroke(1.dp, BGrowthBorder)
+        border = BorderStroke(
+            1.dp,
+            BGrowthBorder
+        )
     ) {
         Row(
             modifier = Modifier
@@ -723,29 +977,40 @@ private fun BottomNavigationBar(onMainAddClick: () -> Unit) {
                 .padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+
             BottomNavigationItem(
                 label = "Dashboard",
                 icon = Icons.Filled.Home,
                 selected = true,
                 modifier = Modifier.weight(1f)
             )
+
             BottomNavigationItem(
                 label = "Sales",
                 icon = Icons.AutoMirrored.Filled.List,
                 selected = false,
+                onClick = onSalesClick,
                 modifier = Modifier.weight(1f)
             )
-            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
                 Surface(
                     modifier = Modifier
                         .size(54.dp)
                         .clip(CircleShape)
-                        .clickable(onClick = onMainAddClick),
+                        .clickable(
+                            onClick = onMainAddClick
+                        ),
                     shape = CircleShape,
                     color = colors.primary,
                     shadowElevation = 5.dp
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
+                    Box(
+                        contentAlignment = Alignment.Center
+                    ) {
                         Icon(
                             imageVector = Icons.Filled.Add,
                             contentDescription = "Add",
@@ -755,12 +1020,15 @@ private fun BottomNavigationBar(onMainAddClick: () -> Unit) {
                     }
                 }
             }
+
             BottomNavigationItem(
                 label = "Products",
                 icon = Icons.Filled.ShoppingCart,
                 selected = false,
+                onClick = onProductsClick,
                 modifier = Modifier.weight(1f)
             )
+
             BottomNavigationItem(
                 label = "Business",
                 icon = Icons.Filled.Home,
@@ -776,15 +1044,27 @@ private fun BottomNavigationItem(
     label: String,
     icon: ImageVector,
     selected: Boolean,
+    onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val colors = MaterialTheme.colorScheme
-    val tint = if (selected) colors.primary else BGrowthMutedText
+
+    val tint =
+        if (selected) {
+            colors.primary
+        } else {
+            BGrowthMutedText
+        }
 
     Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        modifier = modifier
+            .clickable(
+                onClick = onClick
+            ),
+        horizontalAlignment =
+            Alignment.CenterHorizontally,
+        verticalArrangement =
+            Arrangement.Center
     ) {
         Icon(
             imageVector = icon,
@@ -792,23 +1072,35 @@ private fun BottomNavigationItem(
             modifier = Modifier.size(22.dp),
             tint = tint
         )
-        Spacer(modifier = Modifier.height(4.dp))
+
+        Spacer(
+            modifier = Modifier.height(4.dp)
+        )
+
         Text(
             text = label,
             color = tint,
             fontSize = 9.sp,
             lineHeight = 11.sp,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            fontWeight =
+                if (selected) {
+                    FontWeight.Bold
+                } else {
+                    FontWeight.Medium
+                },
             maxLines = 1
         )
     }
 }
 
 @Composable
-private fun SectionTitle(text: String) {
+private fun SectionTitle(
+    text: String
+) {
     Text(
         text = text,
-        color = MaterialTheme.colorScheme.onBackground,
+        color =
+            MaterialTheme.colorScheme.onBackground,
         fontSize = 18.sp,
         lineHeight = 24.sp,
         fontWeight = FontWeight.Bold
@@ -816,14 +1108,30 @@ private fun SectionTitle(text: String) {
 }
 
 @Composable
-private fun ErrorMessageCard(message: String) {
+private fun ErrorMessageCard(
+    message: String
+) {
     Text(
         text = message,
         modifier = Modifier
             .fillMaxWidth()
-            .background(BGrowthError.copy(alpha = 0.09f), RoundedCornerShape(12.dp))
-            .border(1.dp, BGrowthError.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
-            .padding(horizontal = 14.dp, vertical = 11.dp),
+            .background(
+                BGrowthError.copy(
+                    alpha = 0.09f
+                ),
+                RoundedCornerShape(12.dp)
+            )
+            .border(
+                1.dp,
+                BGrowthError.copy(
+                    alpha = 0.25f
+                ),
+                RoundedCornerShape(12.dp)
+            )
+            .padding(
+                horizontal = 14.dp,
+                vertical = 11.dp
+            ),
         color = BGrowthError,
         fontSize = 13.sp,
         lineHeight = 18.sp
@@ -836,11 +1144,24 @@ private data class QuickAction(
     val onClick: () -> Unit
 )
 
-private fun formatCurrency(value: Double): String =
-    NumberFormat.getCurrencyInstance(Locale.US).format(value)
+private fun formatCurrency(
+    value: Double
+): String =
+    NumberFormat
+        .getCurrencyInstance(Locale.US)
+        .format(value)
 
-private fun formatTrend(value: Double): String {
-    val amount = if (value % 1.0 == 0.0) value.toInt().toString() else "%.1f".format(value)
+private fun formatTrend(
+    value: Double
+): String {
+
+    val amount =
+        if (value % 1.0 == 0.0) {
+            value.toInt().toString()
+        } else {
+            "%.1f".format(value)
+        }
+
     return "${if (value > 0) "+" else ""}$amount%"
 }
 
@@ -852,7 +1173,10 @@ private fun formatTrend(value: Double): String {
 )
 @Composable
 private fun EmptyDashboardPreview() {
-    BGrothTheme(darkTheme = false) {
+
+    BGrothTheme(
+        darkTheme = false
+    ) {
         DashboardPreview(
             uiState = DashboardUiState(
                 userName = "Ahmad",
@@ -870,7 +1194,10 @@ private fun EmptyDashboardPreview() {
 )
 @Composable
 private fun PopulatedDashboardPreview() {
-    BGrothTheme(darkTheme = false) {
+
+    BGrothTheme(
+        darkTheme = false
+    ) {
         DashboardPreview(
             uiState = DashboardUiState(
                 userName = "Ahmad",
@@ -887,12 +1214,16 @@ private fun PopulatedDashboardPreview() {
 }
 
 @Composable
-private fun DashboardPreview(uiState: DashboardUiState) {
+private fun DashboardPreview(
+    uiState: DashboardUiState
+) {
     DashboardScreen(
         uiState = uiState,
         onMenuClick = {},
         onAddProductClick = {},
         onRecordSaleClick = {},
+        onSalesClick = {},
+        onProductsClick = {},
         onAddExpenseClick = {},
         onViewReportsClick = {},
         onLowStockClick = {},
