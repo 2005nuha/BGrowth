@@ -11,6 +11,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.*
@@ -44,7 +46,9 @@ fun ExpensesScreen(
         onDateSelected = viewModel::onDateFilterSelected,
         onCategorySelected = viewModel::onCategoryFilterSelected,
         onNavigateBack = onNavigateBack,
-        onSettingsClick = { /* Handle settings */ }
+        onSettingsClick = { /* Handle settings */ },
+        onEditExpense = { expense -> /* إضافة كود الانتقال لشاشة التعديل هنا لاحقاً */ },
+        onDeleteExpense = { expense -> /* إضافة كود دالة الحذف هنا لاحقاً */ }
     )
 }
 
@@ -56,7 +60,9 @@ fun ExpensesContent(
     onDateSelected: (String) -> Unit,
     onCategorySelected: (String) -> Unit,
     onNavigateBack: () -> Unit,
-    onSettingsClick: () -> Unit
+    onSettingsClick: () -> Unit,
+    onEditExpense: (ExpenseItem) -> Unit,
+    onDeleteExpense: (ExpenseItem) -> Unit
 ) {
     Scaffold(
         containerColor = BackgroundColor,
@@ -238,7 +244,11 @@ fun ExpensesContent(
                 }
 
                 items(group.items) { item ->
-                    ExpenseItemCard(item = item)
+                    ExpenseItemCard(
+                        item = item,
+                        onEditClick = { onEditExpense(item) },
+                        onDeleteClick = { onDeleteExpense(item) }
+                    )
                 }
             }
         }
@@ -264,7 +274,11 @@ fun CustomChip(text: String, selected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-fun ExpenseItemCard(item: ExpenseItem) {
+fun ExpenseItemCard(
+    item: ExpenseItem,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
     Card(
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         border = BorderStroke(1.dp, BorderLight),
@@ -299,6 +313,36 @@ fun ExpenseItemCard(item: ExpenseItem) {
                     color = GrayText,
                     fontSize = 12.sp
                 )
+
+                Spacer(modifier = Modifier.height(8.dp))
+                // أزرار التعديل والحذف الجديدة
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // زر التعديل (Edit)
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .clickable { onEditClick() }
+                            .padding(end = 12.dp, top = 4.dp, bottom = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit", tint = DarkGreen, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Edit", color = DarkGreen, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                    }
+
+                    // زر الحذف (Delete)
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .clickable { onDeleteClick() }
+                            .padding(end = 8.dp, top = 4.dp, bottom = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = RedText, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Delete", color = RedText, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                    }
+                }
             }
             Text(
                 text = item.amount,
@@ -347,7 +391,69 @@ fun ExpensesScreenPreview() {
             onDateSelected = {},
             onCategorySelected = {},
             onNavigateBack = {},
-            onSettingsClick = {}
+            onSettingsClick = {},
+            onEditExpense = {},
+            onDeleteExpense = {}
         )
     }
+}
+
+@Preview(showBackground = true, device = "id:pixel_5", name = "2. Filtered: Today")
+@Composable
+fun ExpensesTodayPreview() {
+    val mockUiState = ExpensesUiState(
+        searchQuery = "",
+        selectedDate = "Today",
+        selectedCategory = "All",
+        dateOptions = listOf("This week", "Today", "This month"),
+        categoryOptions = listOf("All", "Rent", "Supplies", "Utilities"),
+        totalExpenses = 45.00,
+        avgExpense = 45.00,
+        expenseGroups = listOf(
+            ExpenseGroup(
+                dateHeader = "Today, Sep 7",
+                totalAmount = "-$45.00",
+                items = listOf(ExpenseItem("Electricity Bill", "Utilities · Today, 9:15 AM", "-$45.00"))
+            )
+        )
+    )
+    MaterialTheme { ExpensesContent(uiState = mockUiState, onSearchQueryChange = {}, onDateSelected = {}, onCategorySelected = {}, onNavigateBack = {}, onSettingsClick = {}, onEditExpense = {}, onDeleteExpense = {}) }
+}
+
+@Preview(showBackground = true, device = "id:pixel_5", name = "3. Filtered: Rent")
+@Composable
+fun ExpensesRentPreview() {
+    val mockUiState = ExpensesUiState(
+        searchQuery = "",
+        selectedDate = "This month",
+        selectedCategory = "Rent", // هنا تغير الصنف
+        dateOptions = listOf("This week", "Today", "This month"),
+        categoryOptions = listOf("All", "Rent", "Supplies", "Utilities"),
+        totalExpenses = 500.00,
+        avgExpense = 500.00,
+        expenseGroups = listOf(
+            ExpenseGroup(
+                dateHeader = "Sep 1",
+                totalAmount = "-$500.00",
+                items = listOf(ExpenseItem("Shop Rent", "Rent · Sep 1", "-$500.00"))
+            )
+        )
+    )
+    MaterialTheme { ExpensesContent(uiState = mockUiState, onSearchQueryChange = {}, onDateSelected = {}, onCategorySelected = {}, onNavigateBack = {}, onSettingsClick = {}, onEditExpense = {}, onDeleteExpense = {}) }
+}
+
+@Preview(showBackground = true, device = "id:pixel_5", name = "4. Empty Results")
+@Composable
+fun ExpensesEmptyPreview() {
+    val mockUiState = ExpensesUiState(
+        searchQuery = "",
+        selectedDate = "Today",
+        selectedCategory = "Rent",
+        dateOptions = listOf("This week", "Today", "This month"),
+        categoryOptions = listOf("All", "Rent", "Supplies", "Utilities"),
+        totalExpenses = 0.00,
+        avgExpense = 0.00,
+        expenseGroups = emptyList()
+    )
+    MaterialTheme { ExpensesContent(uiState = mockUiState, onSearchQueryChange = {}, onDateSelected = {}, onCategorySelected = {}, onNavigateBack = {}, onSettingsClick = {}, onEditExpense = {}, onDeleteExpense = {}) }
 }
