@@ -71,4 +71,9 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.4")
     implementation("androidx.navigation:navigation-compose:2.8.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+
+
+    //Icon Library
+    implementation("androidx.compose.material:material-icons-extended")
 }
