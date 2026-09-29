@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlin.math.abs
 
-// الألوان
 val DarkGreen = Color(0xFF105942)
 val BackgroundColor = Color(0xFFF9F9F9)
 val BorderLight = Color(0xFFE5E5E5)
@@ -496,7 +495,6 @@ fun MockDateRangePickerSheet(onApply: () -> Unit) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // زر التطبيق
         Button(
             onClick = onApply,
             modifier = Modifier

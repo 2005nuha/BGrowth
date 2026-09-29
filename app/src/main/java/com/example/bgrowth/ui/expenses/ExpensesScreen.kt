@@ -403,7 +403,7 @@ fun ExpensesScreenPreview() {
 fun ExpensesTodayPreview() {
     val mockUiState = ExpensesUiState(
         searchQuery = "",
-        selectedDate = "Today",
+        selectedDate = "Today", // هنا تغير الوقت
         selectedCategory = "All",
         dateOptions = listOf("This week", "Today", "This month"),
         categoryOptions = listOf("All", "Rent", "Supplies", "Utilities"),
