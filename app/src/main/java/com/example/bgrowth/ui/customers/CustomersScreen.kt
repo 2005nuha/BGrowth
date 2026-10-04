@@ -221,7 +221,6 @@ fun EmptyCustomersView() {
     }
 }
 
-// ============================== Previews ============================== //
 
 @Preview(showBackground = true, device = "id:pixel_5", name = "1. Customers List")
 @Composable

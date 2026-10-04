@@ -9,9 +9,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
-
-    private const val BASE_URL = "https://english-bras-worker-nick.trycloudflare.com/"
-
+    private const val BASE_URL = "https://pichunter-commander-biol-gadgets.trycloudflare.com/"
     private val authInterceptor = Interceptor { chain ->
         val token = BGrowthApp.instance.sessionManager.getToken()
         val request = if (token != null) {
@@ -23,7 +21,6 @@ object RetrofitClient {
         }
         chain.proceed(request)
     }
-
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
         redactHeader("Authorization")
@@ -36,7 +33,6 @@ object RetrofitClient {
         .readTimeout(30, TimeUnit.SECONDS)
         .writeTimeout(30, TimeUnit.SECONDS)
         .build()
-
     val authApi: AuthApi by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)

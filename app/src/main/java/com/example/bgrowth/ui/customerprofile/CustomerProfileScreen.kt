@@ -85,7 +85,6 @@ fun CustomerProfileContent(
                             .padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // صورة الأفاتار
                         Box(
                             modifier = Modifier
                                 .size(64.dp)
