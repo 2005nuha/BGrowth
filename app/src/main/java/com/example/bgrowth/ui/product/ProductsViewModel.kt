@@ -1,60 +1,81 @@
 package com.example.bgrowth.ui.product
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.bgrowth.data.repository.ProductRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
-class ProductsViewModel : ViewModel() {
+class ProductsViewModel(
+    private val repository: ProductRepository = ProductRepository()
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
-        ProductsUiState(
-            products = listOf(
-                ProductListItem(
-                    id = 1,
-                    name = "Potato Chips",
-                    category = "Snacks",
-                    price = 1.80,
-                    trackStock = true,
-                    stockQuantity = 24,
-                    minStockLevel = 10
-                ),
-                ProductListItem(
-                    id = 2,
-                    name = "Arabic Coffee",
-                    category = "Coffee & Tea",
-                    price = 25.00,
-                    trackStock = true,
-                    stockQuantity = 32,
-                    minStockLevel = 10
-                ),
-                ProductListItem(
-                    id = 3,
-                    name = "Thermal Cup",
-                    category = "Cups & Mugs",
-                    price = 18.00,
-                    trackStock = true,
-                    stockQuantity = 4,
-                    minStockLevel = 5
-                ),
-                ProductListItem(
-                    id = 4,
-                    name = "Turkish Coffee",
-                    category = "Coffee & Tea",
-                    price = 21.00,
-                    trackStock = true,
-                    stockQuantity = 0,
-                    minStockLevel = 5
-                )
-            )
-        )
+        ProductsUiState()
     )
 
     val uiState: StateFlow<ProductsUiState> =
         _uiState.asStateFlow()
 
+    init {
+        loadProducts()
+    }
+
+    fun loadProducts() {
+
+        viewModelScope.launch {
+
+            _uiState.update {
+                it.copy(
+                    isLoading = true,
+                    errorMessage = null
+                )
+            }
+
+            repository.getProducts()
+                .onSuccess { products ->
+
+                    val productItems = products.map { product ->
+
+                        ProductListItem(
+                            id = product.id,
+                            name = product.name,
+                            category = product.category?.toString() ?: "",
+                            price = product.selling_price
+                                .toDoubleOrNull() ?: 0.0,
+                            trackStock = true,
+                            stockQuantity = product.quantity,
+                            minStockLevel = product.minimum_stock
+                        )
+                    }
+
+                    _uiState.update {
+                        it.copy(
+                            products = productItems,
+                            isLoading = false,
+                            errorMessage = null
+                        )
+                    }
+                }
+                .onFailure { error ->
+
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage =
+                                error.message
+                                    ?: "Failed to load products."
+                        )
+                    }
+                }
+        }
+    }
+
     fun onSearchQueryChange(value: String) {
+
         _uiState.update {
             it.copy(
                 searchQuery = value
@@ -63,6 +84,7 @@ class ProductsViewModel : ViewModel() {
     }
 
     fun onCategorySelected(category: String?) {
+
         _uiState.update {
             it.copy(
                 selectedCategory = category
@@ -71,6 +93,7 @@ class ProductsViewModel : ViewModel() {
     }
 
     fun openProductMenu(productId: Int) {
+
         _uiState.update {
             it.copy(
                 openedMenuProductId = productId
@@ -79,6 +102,7 @@ class ProductsViewModel : ViewModel() {
     }
 
     fun closeProductMenu() {
+
         _uiState.update {
             it.copy(
                 openedMenuProductId = null
@@ -86,7 +110,10 @@ class ProductsViewModel : ViewModel() {
         }
     }
 
-    fun requestDeleteProduct(product: ProductListItem) {
+    fun requestDeleteProduct(
+        product: ProductListItem
+    ) {
+
         _uiState.update {
             it.copy(
                 openedMenuProductId = null,
@@ -96,6 +123,7 @@ class ProductsViewModel : ViewModel() {
     }
 
     fun cancelDeleteProduct() {
+
         _uiState.update {
             it.copy(
                 productPendingDelete = null
@@ -109,7 +137,11 @@ class ProductsViewModel : ViewModel() {
             _uiState.value.productPendingDelete
                 ?: return
 
+        // مؤقتًا نحذف من الواجهة فقط.
+        // لاحقًا نربطه مع Delete Product API.
+
         _uiState.update {
+
             it.copy(
                 products = it.products.filter { item ->
                     item.id != product.id
@@ -117,7 +149,5 @@ class ProductsViewModel : ViewModel() {
                 productPendingDelete = null
             )
         }
-
-        // TODO: Replace with Delete Product API.
     }
 }

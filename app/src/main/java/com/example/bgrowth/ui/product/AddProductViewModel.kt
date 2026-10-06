@@ -1,12 +1,19 @@
 package com.example.bgrowth.ui.product
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.bgrowth.data.model.CreateCategoryRequest
+import com.example.bgrowth.data.model.CreateProductRequest
+import com.example.bgrowth.data.repository.ProductRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
-class AddProductViewModel : ViewModel() {
+class AddProductViewModel(
+    private val repository: ProductRepository = ProductRepository()
+) : ViewModel() {
 
     private val _uiState =
         MutableStateFlow(AddProductUiState())
@@ -18,7 +25,8 @@ class AddProductViewModel : ViewModel() {
         _uiState.update {
             it.copy(
                 productName = value,
-                productNameError = null
+                productNameError = null,
+                errorMessage = null
             )
         }
     }
@@ -27,7 +35,8 @@ class AddProductViewModel : ViewModel() {
         _uiState.update {
             it.copy(
                 categoryName = value,
-                categoryError = null
+                categoryError = null,
+                errorMessage = null
             )
         }
     }
@@ -35,65 +44,83 @@ class AddProductViewModel : ViewModel() {
     fun onDescriptionChange(value: String) {
         _uiState.update {
             it.copy(
-                description = value
+                description = value,
+                errorMessage = null
             )
         }
     }
 
     fun onPriceChange(value: String) {
-        if (isValidDecimalInput(value)) {
+        if (
+            value.isEmpty() ||
+            value.matches(
+                Regex("""^\d*\.?\d{0,2}$""")
+            )
+        ) {
             _uiState.update {
                 it.copy(
                     price = value,
-                    priceError = null
+                    priceError = null,
+                    errorMessage = null
                 )
             }
         }
     }
 
     fun onCostChange(value: String) {
-        if (isValidDecimalInput(value)) {
+        if (
+            value.isEmpty() ||
+            value.matches(
+                Regex("""^\d*\.?\d{0,2}$""")
+            )
+        ) {
             _uiState.update {
                 it.copy(
                     cost = value,
-                    costError = null
+                    costError = null,
+                    errorMessage = null
                 )
             }
         }
     }
 
     fun onOpeningStockChange(value: String) {
-        if (value.all { it.isDigit() }) {
+        if (
+            value.isEmpty() ||
+            value.all { char -> char.isDigit() }
+        ) {
             _uiState.update {
                 it.copy(
                     openingStock = value,
-                    openingStockError = null
+                    openingStockError = null,
+                    errorMessage = null
                 )
             }
         }
     }
 
     fun onMinStockLevelChange(value: String) {
-        if (value.all { it.isDigit() }) {
+        if (
+            value.isEmpty() ||
+            value.all { char -> char.isDigit() }
+        ) {
             _uiState.update {
                 it.copy(
                     minStockLevel = value,
-                    minStockLevelError = null
+                    minStockLevelError = null,
+                    errorMessage = null
                 )
             }
         }
     }
 
-    fun onTrackStockChange(enabled: Boolean) {
+    fun onTrackStockChange(value: Boolean) {
         _uiState.update {
             it.copy(
-                trackStock = enabled,
-
-                openingStockError =
-                    if (enabled) it.openingStockError else null,
-
-                minStockLevelError =
-                    if (enabled) it.minStockLevelError else null
+                trackStock = value,
+                openingStockError = null,
+                minStockLevelError = null,
+                errorMessage = null
             )
         }
     }
@@ -102,89 +129,95 @@ class AddProductViewModel : ViewModel() {
 
         val state = _uiState.value
 
+        val productName =
+            state.productName.trim()
+
+        val categoryName =
+            state.categoryName.trim()
+
+        val price =
+            state.price.toDoubleOrNull()
+
+        val cost =
+            if (state.cost.isBlank()) {
+                null
+            } else {
+                state.cost.toDoubleOrNull()
+            }
+
+        val openingStock =
+            if (state.trackStock) {
+                state.openingStock.toIntOrNull()
+            } else {
+                0
+            }
+
+        val minStock =
+            if (state.trackStock) {
+                state.minStockLevel.toIntOrNull()
+            } else {
+                0
+            }
+
         val productNameError =
-            if (state.productName.isBlank()) {
+            if (productName.isBlank()) {
                 "Product name is required"
             } else {
                 null
             }
 
         val categoryError =
-            if (state.categoryName.isBlank()) {
+            if (categoryName.isBlank()) {
                 "Category is required"
             } else {
                 null
             }
 
-        val priceValue =
-            state.price.toDoubleOrNull()
-
         val priceError =
-            if (
-                priceValue == null ||
-                priceValue < 0
-            ) {
+            if (price == null || price < 0) {
                 "Enter a valid price"
             } else {
                 null
             }
 
-        val costValue =
-            state.cost
-                .takeIf { it.isNotBlank() }
-                ?.toDoubleOrNull()
-
         val costError =
             if (
                 state.cost.isNotBlank() &&
-                (costValue == null || costValue < 0)
+                (cost == null || cost < 0)
             ) {
                 "Enter a valid cost"
             } else {
                 null
             }
 
-        val openingStockValue =
-            state.openingStock.toIntOrNull()
-
         val openingStockError =
             if (
                 state.trackStock &&
-                (
-                        openingStockValue == null ||
-                                openingStockValue < 0
-                        )
+                (openingStock == null || openingStock < 0)
             ) {
-                "Enter valid opening stock"
+                "Enter a valid opening stock"
             } else {
                 null
             }
-
-        val minStockLevelValue =
-            state.minStockLevel.toIntOrNull()
 
         val minStockLevelError =
             if (
                 state.trackStock &&
-                (
-                        minStockLevelValue == null ||
-                                minStockLevelValue < 0
-                        )
+                (minStock == null || minStock < 0)
             ) {
-                "Enter valid minimum stock"
+                "Enter a valid minimum stock"
             } else {
                 null
             }
 
-        val hasErrors =
+        if (
             productNameError != null ||
-                    categoryError != null ||
-                    priceError != null ||
-                    costError != null ||
-                    openingStockError != null ||
-                    minStockLevelError != null
-
-        if (hasErrors) {
+            categoryError != null ||
+            priceError != null ||
+            costError != null ||
+            openingStockError != null ||
+            minStockLevelError != null
+        ) {
 
             _uiState.update {
                 it.copy(
@@ -200,12 +233,134 @@ class AddProductViewModel : ViewModel() {
             return
         }
 
-        // TODO: Replace with real Add Product API.
+        viewModelScope.launch {
 
-        _uiState.update {
-            it.copy(
-                isProductSaved = true
-            )
+            _uiState.update {
+                it.copy(
+                    isLoading = true,
+                    errorMessage = null
+                )
+            }
+
+            try {
+
+                // 1. Get existing categories
+                val categoriesResult =
+                    repository.getCategories()
+
+                val categories =
+                    categoriesResult.getOrElse { error ->
+
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                errorMessage =
+                                    error.message
+                                        ?: "Failed to load categories"
+                            )
+                        }
+
+                        return@launch
+                    }
+
+                // 2. Check if the typed category already exists
+                var categoryId =
+                    categories
+                        .firstOrNull {
+                            it.name.equals(
+                                categoryName,
+                                ignoreCase = true
+                            )
+                        }
+                        ?.id
+
+                // 3. If not, create it
+                if (categoryId == null) {
+
+                    val categoryResult =
+                        repository.createCategory(
+                            CreateCategoryRequest(
+                                name = categoryName
+                            )
+                        )
+
+                    val createdCategory =
+                        categoryResult.getOrElse { error ->
+
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    errorMessage =
+                                        error.message
+                                            ?: "Failed to create category"
+                                )
+                            }
+
+                            return@launch
+                        }
+
+                    categoryId =
+                        createdCategory.id
+                }
+
+                // 4. Create the actual product
+                val productRequest =
+                    CreateProductRequest(
+                        category = categoryId,
+                        name = productName,
+                        description =
+                            state.description.trim(),
+                        selling_price =
+                            state.price,
+                        cost_price =
+                            state.cost
+                                .takeIf { it.isNotBlank() },
+                        minimum_stock =
+                            minStock ?: 0,
+                        image = "",
+                        initial_quantity =
+                            openingStock ?: 0
+                    )
+
+                val productResult =
+                    repository.createProduct(
+                        productRequest
+                    )
+
+                productResult
+                    .onSuccess {
+
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                isProductSaved = true,
+                                errorMessage = null
+                            )
+                        }
+                    }
+                    .onFailure { error ->
+
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                errorMessage =
+                                    error.message
+                                        ?: "Failed to create product"
+                            )
+                        }
+                    }
+
+            } catch (e: Exception) {
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage =
+                            e.message
+                                ?: "Something went wrong"
+                    )
+                }
+            }
         }
     }
 
@@ -215,15 +370,5 @@ class AddProductViewModel : ViewModel() {
                 isProductSaved = false
             )
         }
-    }
-
-    private fun isValidDecimalInput(
-        value: String
-    ): Boolean {
-
-        return value.isEmpty() ||
-                value.matches(
-                    Regex("""^\d*\.?\d*$""")
-                )
     }
 }

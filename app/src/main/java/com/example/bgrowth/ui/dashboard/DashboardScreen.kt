@@ -44,7 +44,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -55,12 +54,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.bgrowth.ui.components.BGrowthBottomNavigation
+import com.example.bgrowth.ui.components.BottomNavItem
+import com.example.bgrowth.ui.theme.BGrothTheme
 import com.example.bgrowth.ui.theme.BGrowthAccent
 import com.example.bgrowth.ui.theme.BGrowthBorder
 import com.example.bgrowth.ui.theme.BGrowthError
-import com.example.bgrowth.ui.theme.BGrowthMutedText
 import com.example.bgrowth.ui.theme.BGrowthSecondaryText
-import com.example.bgrowth.ui.theme.BGrothTheme
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -141,10 +141,13 @@ fun DashboardScreen(
             }
         }
 
-        BottomNavigationBar(
+        BGrowthBottomNavigation(
+            selectedItem = BottomNavItem.DASHBOARD,
+            onDashboardClick = {},
             onSalesClick = onSalesClick,
+            onAddClick = onMainAddClick,
             onProductsClick = onProductsClick,
-            onMainAddClick = onMainAddClick
+            onBusinessClick = {}
         )
     }
 }
@@ -947,149 +950,6 @@ private fun NextStepsCard() {
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun BottomNavigationBar(
-    onSalesClick: () -> Unit,
-    onProductsClick: () -> Unit,
-    onMainAddClick: () -> Unit
-) {
-    val colors = MaterialTheme.colorScheme
-
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(76.dp)
-            .shadow(
-                elevation = 10.dp
-            ),
-        color = colors.surface,
-        border = BorderStroke(
-            1.dp,
-            BGrowthBorder
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-
-            BottomNavigationItem(
-                label = "Dashboard",
-                icon = Icons.Filled.Home,
-                selected = true,
-                modifier = Modifier.weight(1f)
-            )
-
-            BottomNavigationItem(
-                label = "Sales",
-                icon = Icons.AutoMirrored.Filled.List,
-                selected = false,
-                onClick = onSalesClick,
-                modifier = Modifier.weight(1f)
-            )
-
-            Box(
-                modifier = Modifier.weight(1f),
-                contentAlignment = Alignment.Center
-            ) {
-                Surface(
-                    modifier = Modifier
-                        .size(54.dp)
-                        .clip(CircleShape)
-                        .clickable(
-                            onClick = onMainAddClick
-                        ),
-                    shape = CircleShape,
-                    color = colors.primary,
-                    shadowElevation = 5.dp
-                ) {
-                    Box(
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Add,
-                            contentDescription = "Add",
-                            modifier = Modifier.size(28.dp),
-                            tint = colors.onPrimary
-                        )
-                    }
-                }
-            }
-
-            BottomNavigationItem(
-                label = "Products",
-                icon = Icons.Filled.ShoppingCart,
-                selected = false,
-                onClick = onProductsClick,
-                modifier = Modifier.weight(1f)
-            )
-
-            BottomNavigationItem(
-                label = "Business",
-                icon = Icons.Filled.Home,
-                selected = false,
-                modifier = Modifier.weight(1f)
-            )
-        }
-    }
-}
-
-@Composable
-private fun BottomNavigationItem(
-    label: String,
-    icon: ImageVector,
-    selected: Boolean,
-    onClick: () -> Unit = {},
-    modifier: Modifier = Modifier
-) {
-    val colors = MaterialTheme.colorScheme
-
-    val tint =
-        if (selected) {
-            colors.primary
-        } else {
-            BGrowthMutedText
-        }
-
-    Column(
-        modifier = modifier
-            .clickable(
-                onClick = onClick
-            ),
-        horizontalAlignment =
-            Alignment.CenterHorizontally,
-        verticalArrangement =
-            Arrangement.Center
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            modifier = Modifier.size(22.dp),
-            tint = tint
-        )
-
-        Spacer(
-            modifier = Modifier.height(4.dp)
-        )
-
-        Text(
-            text = label,
-            color = tint,
-            fontSize = 9.sp,
-            lineHeight = 11.sp,
-            fontWeight =
-                if (selected) {
-                    FontWeight.Bold
-                } else {
-                    FontWeight.Medium
-                },
-            maxLines = 1
-        )
     }
 }
 

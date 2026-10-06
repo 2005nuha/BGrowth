@@ -1,6 +1,5 @@
 package com.example.bgrowth.data.model
 
-data class TokenPair(
-    val access: String,
+data class RefreshTokenRequest(
     val refresh: String
 )
