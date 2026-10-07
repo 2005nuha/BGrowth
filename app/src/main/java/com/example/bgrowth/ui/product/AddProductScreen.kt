@@ -1,7 +1,6 @@
 package com.example.bgrowth.ui.product
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,14 +21,13 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -49,7 +47,6 @@ import com.example.bgrowth.ui.theme.BGrothTheme
 private val ProductPrimary = Color(0xFF0F5D46)
 private val ProductSurface = Color.White
 private val ProductBorder = Color(0xFFD9E3DA)
-private val ProductSecondaryText = Color(0xFF5E6B63)
 private val ProductMutedText = Color(0xFF8A958E)
 private val ProductError = Color(0xFFD9534F)
 
@@ -80,7 +77,6 @@ fun AddProductScreen(
         onCostChange = viewModel::onCostChange,
         onOpeningStockChange = viewModel::onOpeningStockChange,
         onMinStockLevelChange = viewModel::onMinStockLevelChange,
-        onTrackStockChange = viewModel::onTrackStockChange,
         onSaveProduct = viewModel::saveProduct
     )
 }
@@ -97,7 +93,6 @@ private fun AddProductContent(
     onCostChange: (String) -> Unit,
     onOpeningStockChange: (String) -> Unit,
     onMinStockLevelChange: (String) -> Unit,
-    onTrackStockChange: (Boolean) -> Unit,
     onSaveProduct: () -> Unit
 ) {
     Column(
@@ -117,8 +112,10 @@ private fun AddProductContent(
                 ),
             verticalAlignment = Alignment.CenterVertically
         ) {
+
             IconButton(
-                onClick = onBackClick
+                onClick = onBackClick,
+                enabled = !uiState.isLoading
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -134,12 +131,6 @@ private fun AddProductContent(
                 color = ProductPrimary
             )
         }
-
-        Spacer(
-            modifier = Modifier.height(8.dp)
-        )
-
-        LogoUploadCard()
 
         Spacer(
             modifier = Modifier.height(14.dp)
@@ -165,15 +156,6 @@ private fun AddProductContent(
         )
 
         Spacer(
-            modifier = Modifier.height(14.dp)
-        )
-
-        TrackStockCard(
-            enabled = uiState.trackStock,
-            onCheckedChange = onTrackStockChange
-        )
-
-        Spacer(
             modifier = Modifier.height(18.dp)
         )
 
@@ -186,6 +168,7 @@ private fun AddProductContent(
 
             OutlinedButton(
                 onClick = onCancelClick,
+                enabled = !uiState.isLoading,
                 modifier = Modifier
                     .weight(1f)
                     .height(52.dp),
@@ -203,6 +186,7 @@ private fun AddProductContent(
 
             Button(
                 onClick = onSaveProduct,
+                enabled = !uiState.isLoading,
                 modifier = Modifier
                     .weight(2f)
                     .height(52.dp),
@@ -211,18 +195,36 @@ private fun AddProductContent(
                     containerColor = ProductPrimary
                 )
             ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = null
-                )
 
-                Spacer(
-                    modifier = Modifier.size(6.dp)
-                )
+                if (uiState.isLoading) {
 
-                Text(
-                    text = "Save Product"
-                )
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(22.dp),
+                        strokeWidth = 2.dp,
+                        color = Color.White
+                    )
+
+                    Spacer(
+                        modifier = Modifier.size(8.dp)
+                    )
+
+                    Text("Saving...")
+
+                } else {
+
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null
+                    )
+
+                    Spacer(
+                        modifier = Modifier.size(6.dp)
+                    )
+
+                    Text(
+                        text = "Save Product"
+                    )
+                }
             }
         }
 
@@ -244,62 +246,12 @@ private fun AddProductContent(
 }
 
 @Composable
-private fun LogoUploadCard() {
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .clickable {
-                // TODO: Add image picker later
-            },
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = ProductSurface
-        ),
-        border = BorderStroke(
-            width = 1.dp,
-            color = ProductPrimary.copy(
-                alpha = 0.35f
-            )
-        )
-    ) {
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 22.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = "Add logo",
-                tint = ProductPrimary,
-                modifier = Modifier.size(28.dp)
-            )
-
-            Spacer(
-                modifier = Modifier.height(8.dp)
-            )
-
-            Text(
-                text = "Add Logo (Optional)",
-                fontSize = 13.sp,
-                color = ProductMutedText
-            )
-        }
-    }
-}
-
-@Composable
 private fun BasicInformationCard(
     uiState: AddProductUiState,
     onProductNameChange: (String) -> Unit,
     onCategoryNameChange: (String) -> Unit,
     onDescriptionChange: (String) -> Unit
 ) {
-
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -339,6 +291,7 @@ private fun BasicInformationCard(
                     Text("e.g. Product name")
                 },
                 singleLine = true,
+                enabled = !uiState.isLoading,
                 isError = uiState.productNameError != null,
                 supportingText = {
                     uiState.productNameError?.let {
@@ -366,6 +319,7 @@ private fun BasicInformationCard(
                     )
                 },
                 singleLine = true,
+                enabled = !uiState.isLoading,
                 isError = uiState.categoryError != null,
                 supportingText = {
                     uiState.categoryError?.let {
@@ -394,6 +348,7 @@ private fun BasicInformationCard(
                         "Short description (Optional)"
                     )
                 },
+                enabled = !uiState.isLoading,
                 shape = RoundedCornerShape(12.dp),
                 colors = productTextFieldColors()
             )
@@ -409,7 +364,6 @@ private fun PriceAndStockCard(
     onOpeningStockChange: (String) -> Unit,
     onMinStockLevelChange: (String) -> Unit
 ) {
-
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -456,6 +410,7 @@ private fun PriceAndStockCard(
                         keyboardType = KeyboardType.Decimal
                     ),
                     singleLine = true,
+                    enabled = !uiState.isLoading,
                     isError = uiState.priceError != null,
                     supportingText = {
                         uiState.priceError?.let {
@@ -480,6 +435,7 @@ private fun PriceAndStockCard(
                         keyboardType = KeyboardType.Decimal
                     ),
                     singleLine = true,
+                    enabled = !uiState.isLoading,
                     isError = uiState.costError != null,
                     supportingText = {
                         uiState.costError?.let {
@@ -513,7 +469,7 @@ private fun PriceAndStockCard(
                         keyboardType = KeyboardType.Number
                     ),
                     singleLine = true,
-                    enabled = uiState.trackStock,
+                    enabled = !uiState.isLoading,
                     isError =
                         uiState.openingStockError != null,
                     supportingText = {
@@ -539,7 +495,7 @@ private fun PriceAndStockCard(
                         keyboardType = KeyboardType.Number
                     ),
                     singleLine = true,
-                    enabled = uiState.trackStock,
+                    enabled = !uiState.isLoading,
                     isError =
                         uiState.minStockLevelError != null,
                     supportingText = {
@@ -557,69 +513,10 @@ private fun PriceAndStockCard(
             )
 
             Text(
-                text = "You'll get a low-stock alert once quantity goes below this level.",
+                text =
+                    "Stock will be updated automatically when sales are recorded.",
                 color = ProductMutedText,
                 fontSize = 11.sp
-            )
-        }
-    }
-}
-
-@Composable
-private fun TrackStockCard(
-    enabled: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = ProductSurface
-        ),
-        border = BorderStroke(
-            1.dp,
-            ProductBorder
-        )
-    ) {
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-
-                Text(
-                    text = "Track Stock",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp
-                )
-
-                Spacer(
-                    modifier = Modifier.height(3.dp)
-                )
-
-                Text(
-                    text = "Automatically update stock on each sale",
-                    fontSize = 12.sp,
-                    color = ProductSecondaryText
-                )
-            }
-
-            Switch(
-                checked = enabled,
-                onCheckedChange = onCheckedChange,
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = Color.White,
-                    checkedTrackColor = ProductPrimary
-                )
             )
         }
     }
@@ -658,7 +555,6 @@ private fun AddProductEmptyPreview() {
             onCostChange = {},
             onOpeningStockChange = {},
             onMinStockLevelChange = {},
-            onTrackStockChange = {},
             onSaveProduct = {}
         )
     }
@@ -683,8 +579,7 @@ private fun AddProductFilledPreview() {
                 price = "50",
                 cost = "30",
                 openingStock = "25",
-                minStockLevel = "5",
-                trackStock = true
+                minStockLevel = "5"
             ),
             onBackClick = {},
             onCancelClick = {},
@@ -695,7 +590,6 @@ private fun AddProductFilledPreview() {
             onCostChange = {},
             onOpeningStockChange = {},
             onMinStockLevelChange = {},
-            onTrackStockChange = {},
             onSaveProduct = {}
         )
     }

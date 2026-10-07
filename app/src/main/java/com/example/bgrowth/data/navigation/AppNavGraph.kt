@@ -5,15 +5,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import com.example.bgrowth.data.repository.AuthRepository
 import com.example.bgrowth.ui.businesssetup.BusinessSetupScreen
 import com.example.bgrowth.ui.dashboard.DashboardRoute
@@ -29,16 +25,22 @@ import com.example.bgrowth.ui.resetpassword.ResetPasswordScreen
 import com.example.bgrowth.ui.sales.RecordSaleScreen
 import com.example.bgrowth.ui.sales.SalesHistoryScreen
 import com.example.bgrowth.ui.splash.SplashScreen
-import com.example.bgrowth.ui.verification.VerificationMode
-import com.example.bgrowth.ui.verification.VerificationScreen
-import com.example.bgrowth.ui.verification.VerificationViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import com.example.bgrowth.ui.splash.SplashDestination
+import com.example.bgrowth.ui.splash.SplashViewModel
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+import com.example.bgrowth.ui.product.EditProductScreen
+import com.example.bgrowth.ui.product.AdjustStockScreen
+
 
 @Composable
 fun AppNavGraph(
     modifier: Modifier = Modifier,
-    navController: NavHostController = rememberNavController()
+    navController: NavHostController =
+        rememberNavController()
 ) {
 
     NavHost(
@@ -50,14 +52,45 @@ fun AppNavGraph(
         // --------------------------------------------------
         // Splash
         // --------------------------------------------------
-
         composable(Routes.SPLASH) {
 
-            LaunchedEffect(Unit) {
-                delay(SPLASH_DURATION_MILLIS)
+            val splashViewModel:
+                    SplashViewModel =
+                viewModel()
 
-                navController.navigate(Routes.ONBOARDING) {
-                    popUpTo(Routes.SPLASH) {
+            val splashUiState by
+            splashViewModel
+                .uiState
+                .collectAsState()
+
+            LaunchedEffect(
+                splashUiState.destination
+            ) {
+
+                val destination =
+                    splashUiState.destination
+                        ?: return@LaunchedEffect
+
+                val route =
+                    when (destination) {
+
+                        SplashDestination.ONBOARDING ->
+                            Routes.ONBOARDING
+
+                        SplashDestination.BUSINESS_SETUP ->
+                            Routes.BUSINESS_SETUP
+
+                        SplashDestination.DASHBOARD ->
+                            Routes.DASHBOARD
+                    }
+
+                navController.navigate(
+                    route
+                ) {
+
+                    popUpTo(
+                        Routes.SPLASH
+                    ) {
                         inclusive = true
                     }
 
@@ -72,17 +105,25 @@ fun AppNavGraph(
         // Onboarding
         // --------------------------------------------------
 
-        composable(Routes.ONBOARDING) {
+        composable(
+            Routes.ONBOARDING
+        ) {
 
             val openRegister = {
-                navController.navigate(Routes.REGISTER) {
+
+                navController.navigate(
+                    Routes.REGISTER
+                ) {
                     launchSingleTop = true
                 }
             }
 
             OnboardingPagerScreen(
-                onFinished = openRegister,
-                onSkipClick = openRegister
+                onFinished =
+                    openRegister,
+
+                onSkipClick =
+                    openRegister
             )
         }
 
@@ -90,25 +131,64 @@ fun AppNavGraph(
         // Register
         // --------------------------------------------------
 
-        composable(Routes.REGISTER) {
+        composable(
+            Routes.REGISTER
+        ) {
 
-            val registerViewModel: RegisterViewModel =
+            val registerViewModel:
+                    RegisterViewModel =
                 viewModel()
 
             RegisterScreen(
-                viewModel = registerViewModel,
+                viewModel =
+                    registerViewModel,
 
                 onLoginClick = {
-                    navController.navigate(Routes.LOGIN) {
+
+                    navController.navigate(
+                        Routes.LOGIN
+                    ) {
                         launchSingleTop = true
                     }
                 },
 
-                onRegistrationSuccess = {
+                /*
+                 * Register نجح،
+                 * ولكن لا يوجد Business.
+                 */
+                onBusinessSetupRequired = {
+
                     navController.navigate(
                         Routes.BUSINESS_SETUP
                     ) {
-                        popUpTo(Routes.REGISTER) {
+
+                        popUpTo(
+                            Routes.REGISTER
+                        ) {
+                            inclusive = true
+                        }
+
+                        launchSingleTop = true
+                    }
+                },
+
+                /*
+                 * Register نجح،
+                 * ويوجد Business.
+                 *
+                 * هذا غير متوقع غالبًا
+                 * للحساب الجديد، لكن الـFlow
+                 * يبقى صحيحًا لو حصل.
+                 */
+                onDashboardRequired = {
+
+                    navController.navigate(
+                        Routes.DASHBOARD
+                    ) {
+
+                        popUpTo(
+                            Routes.REGISTER
+                        ) {
                             inclusive = true
                         }
 
@@ -119,104 +199,31 @@ fun AppNavGraph(
         }
 
         // --------------------------------------------------
-        // Verification
-        // --------------------------------------------------
-
-        composable(
-            route = Routes.VERIFICATION_ROUTE,
-            arguments = listOf(
-
-                navArgument(
-                    Routes.VERIFICATION_MODE_ARGUMENT
-                ) {
-                    type = NavType.StringType
-                },
-
-                navArgument(
-                    Routes.VERIFICATION_TARGET_ARGUMENT
-                ) {
-                    type = NavType.StringType
-                }
-            )
-        ) { backStackEntry ->
-
-            val verificationTarget =
-                backStackEntry.arguments
-                    ?.getString(
-                        Routes.VERIFICATION_TARGET_ARGUMENT
-                    )
-                    .orEmpty()
-
-            val verificationMode =
-                VerificationMode.fromRouteValue(
-                    backStackEntry.arguments
-                        ?.getString(
-                            Routes.VERIFICATION_MODE_ARGUMENT
-                        )
-                )
-
-            val factory = remember {
-                verificationViewModelFactory()
-            }
-
-            val verificationViewModel:
-                    VerificationViewModel =
-                viewModel(factory = factory)
-
-            VerificationScreen(
-                verificationTarget = verificationTarget,
-                verificationMode = verificationMode,
-                viewModel = verificationViewModel,
-
-                onBackClick = {
-                    navController.popBackStack()
-                },
-
-                onVerificationSuccess = {
-
-                    when (verificationMode) {
-
-                        VerificationMode.SIGN_UP -> {
-
-                            navController.navigate(
-                                Routes.BUSINESS_SETUP
-                            ) {
-                                launchSingleTop = true
-                            }
-                        }
-
-                        VerificationMode.PASSWORD_RESET -> {
-
-                            navController.navigate(
-                                Routes.RESET_PASSWORD
-                            ) {
-                                launchSingleTop = true
-                            }
-                        }
-                    }
-                }
-            )
-        }
-
-        // --------------------------------------------------
         // Forgot Password
         // --------------------------------------------------
 
-        composable(Routes.FORGOT_PASSWORD) {
+        composable(
+            Routes.FORGOT_PASSWORD
+        ) {
 
             ForgotPasswordScreen(
+
                 onBackClick = {
-                    navController.popBackStack()
+                    navController
+                        .popBackStack()
                 },
 
-                onCodeSent = { email ->
+                /*
+                 * مؤقتًا ننتقل إلى Reset Password.
+                 *
+                 * سنراجع Contract الخاص
+                 * Password Reset في الخطوة
+                 * المخصصة له قبل اعتماده نهائيًا.
+                 */
+                onCodeSent = {
 
                     navController.navigate(
-                        Routes.verification(
-                            verificationTarget = email,
-                            verificationMode =
-                                VerificationMode.PASSWORD_RESET
-                        )
+                        Routes.RESET_PASSWORD
                     ) {
                         launchSingleTop = true
                     }
@@ -228,11 +235,15 @@ fun AppNavGraph(
         // Reset Password
         // --------------------------------------------------
 
-        composable(Routes.RESET_PASSWORD) {
+        composable(
+            Routes.RESET_PASSWORD
+        ) {
 
             ResetPasswordScreen(
+
                 onBackClick = {
-                    navController.popBackStack()
+                    navController
+                        .popBackStack()
                 },
 
                 onPasswordResetSuccess = {
@@ -257,25 +268,56 @@ fun AppNavGraph(
         // Login
         // --------------------------------------------------
 
-        composable(Routes.LOGIN) {
+        composable(
+            Routes.LOGIN
+        ) {
 
             val loginViewModel:
-                    LoginViewModel = viewModel()
+                    LoginViewModel =
+                viewModel()
 
             LoginScreen(
-                viewModel = loginViewModel,
+                viewModel =
+                    loginViewModel,
 
                 onBackClick = {
-                    navController.popBackStack()
+                    navController
+                        .popBackStack()
                 },
 
-                onLoginSuccess = {
+                /*
+                 * Login نجح،
+                 * ولا يوجد Business.
+                 */
+                onBusinessSetupRequired = {
 
                     navController.navigate(
                         Routes.BUSINESS_SETUP
                     ) {
 
-                        popUpTo(Routes.LOGIN) {
+                        popUpTo(
+                            Routes.LOGIN
+                        ) {
+                            inclusive = true
+                        }
+
+                        launchSingleTop = true
+                    }
+                },
+
+                /*
+                 * Login نجح،
+                 * ويوجد Business.
+                 */
+                onDashboardRequired = {
+
+                    navController.navigate(
+                        Routes.DASHBOARD
+                    ) {
+
+                        popUpTo(
+                            Routes.LOGIN
+                        ) {
                             inclusive = true
                         }
 
@@ -307,12 +349,15 @@ fun AppNavGraph(
         // Business Setup
         // --------------------------------------------------
 
-        composable(Routes.BUSINESS_SETUP) {
+        composable(
+            Routes.BUSINESS_SETUP
+        ) {
 
             BusinessSetupScreen(
 
                 onBackClick = {
-                    navController.popBackStack()
+                    navController
+                        .popBackStack()
                 },
 
                 onBusinessSetupSuccess = {
@@ -337,7 +382,9 @@ fun AppNavGraph(
         // Dashboard
         // --------------------------------------------------
 
-        composable(Routes.DASHBOARD) {
+        composable(
+            Routes.DASHBOARD
+        ) {
 
             val authRepository =
                 remember {
@@ -417,7 +464,9 @@ fun AppNavGraph(
                     coroutineScope.launch {
 
                         try {
+
                             authRepository.logout()
+
                         } finally {
 
                             navController.navigate(
@@ -425,7 +474,9 @@ fun AppNavGraph(
                             ) {
 
                                 popUpTo(
-                                    navController.graph.id
+                                    navController
+                                        .graph
+                                        .id
                                 ) {
                                     inclusive = true
                                 }
@@ -439,10 +490,20 @@ fun AppNavGraph(
         }
 
         // --------------------------------------------------
-        // Products
-        // --------------------------------------------------
+// Products
+// --------------------------------------------------
 
-        composable(Routes.PRODUCTS) {
+        composable(
+            Routes.PRODUCTS
+        ) { backStackEntry ->
+
+            val productsNeedRefresh by
+            backStackEntry.savedStateHandle
+                .getStateFlow(
+                    "products_need_refresh",
+                    false
+                )
+                .collectAsState()
 
             ProductsScreen(
 
@@ -451,7 +512,6 @@ fun AppNavGraph(
                 },
 
                 onAddProductClick = {
-
                     navController.navigate(
                         Routes.ADD_PRODUCT
                     ) {
@@ -461,30 +521,125 @@ fun AppNavGraph(
 
                 onProductClick = { productId ->
 
-                    // TODO:
-                    // Edit Product / Product Details later
-                    // using productId.
+                    navController.navigate(
+                        Routes.editProduct(
+                            productId = productId
+                        )
+                    ) {
+                        launchSingleTop = true
+                    }
+                },
+
+                onAdjustStockClick = { productId ->
+
+                    navController.navigate(
+                        Routes.adjustStock(
+                            productId = productId
+                        )
+                    ) {
+                        launchSingleTop = true
+                    }
+                },
+
+                refreshRequested = productsNeedRefresh,
+
+                onRefreshConsumed = {
+                    backStackEntry.savedStateHandle[
+                        "products_need_refresh"
+                    ] = false
                 }
             )
         }
-
         // --------------------------------------------------
         // Add Product
         // --------------------------------------------------
 
-        composable(Routes.ADD_PRODUCT) {
+        composable(
+            Routes.ADD_PRODUCT
+        ) {
 
             AddProductScreen(
+
+                onBackClick = {
+                    navController
+                        .popBackStack()
+                },
+
+                onCancelClick = {
+                    navController
+                        .popBackStack()
+                },
+
+                onProductSaved = {
+
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("products_need_refresh", true)
+
+                    navController.popBackStack()
+                }
+            )
+        }
+        composable(
+            route = Routes.EDIT_PRODUCT_ROUTE,
+            arguments = listOf(
+                navArgument(Routes.PRODUCT_ID_ARGUMENT) {
+                    type = NavType.IntType
+                }
+            )
+        ) { backStackEntry ->
+
+            val productId =
+                backStackEntry.arguments
+                    ?.getInt(Routes.PRODUCT_ID_ARGUMENT)
+                    ?: return@composable
+
+            EditProductScreen(
+                productId = productId,
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onProductUpdated = {
+
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("products_need_refresh", true)
+
+                    navController.popBackStack()
+                }
+            )
+        }
+        // --------------------------------------------------
+// Adjust Stock
+// --------------------------------------------------
+
+        composable(
+            route = Routes.ADJUST_STOCK_ROUTE,
+            arguments = listOf(
+                navArgument(Routes.PRODUCT_ID_ARGUMENT) {
+                    type = NavType.IntType
+                }
+            )
+        ) { backStackEntry ->
+
+            val productId =
+                backStackEntry.arguments
+                    ?.getInt(Routes.PRODUCT_ID_ARGUMENT)
+                    ?: return@composable
+
+            AdjustStockScreen(
+                productId = productId,
 
                 onBackClick = {
                     navController.popBackStack()
                 },
 
-                onCancelClick = {
-                    navController.popBackStack()
-                },
+                onStockUpdated = {
 
-                onProductSaved = {
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("products_need_refresh", true)
+
                     navController.popBackStack()
                 }
             )
@@ -494,12 +649,15 @@ fun AppNavGraph(
         // Record Sale
         // --------------------------------------------------
 
-        composable(Routes.RECORD_SALE) {
+        composable(
+            Routes.RECORD_SALE
+        ) {
 
             RecordSaleScreen(
 
                 onBackClick = {
-                    navController.popBackStack()
+                    navController
+                        .popBackStack()
                 },
 
                 onViewAllClick = {
@@ -517,12 +675,15 @@ fun AppNavGraph(
         // Sales History
         // --------------------------------------------------
 
-        composable(Routes.SALES_HISTORY) {
+        composable(
+            Routes.SALES_HISTORY
+        ) {
 
             SalesHistoryScreen(
 
                 onBackClick = {
-                    navController.popBackStack()
+                    navController
+                        .popBackStack()
                 },
 
                 onAddSaleClick = {
@@ -536,48 +697,14 @@ fun AppNavGraph(
 
                 onSaleClick = { saleId ->
 
-                    // TODO:
-                    // Edit Sale / Sale Details later
-                    // using saleId.
+                    /*
+                     * Sprint 2:
+                     * Edit Sale route
+                     * سنضيفه لاحقًا.
+                     */
                 }
             )
         }
     }
 }
 
-
-// --------------------------------------------------
-// Verification ViewModel Factory
-// --------------------------------------------------
-
-private fun verificationViewModelFactory():
-        ViewModelProvider.Factory =
-
-    object : ViewModelProvider.Factory {
-
-        @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(
-            modelClass: Class<T>
-        ): T {
-
-            if (
-                !modelClass.isAssignableFrom(
-                    VerificationViewModel::class.java
-                )
-            ) {
-                throw IllegalArgumentException(
-                    "Unknown ViewModel class: ${modelClass.name}"
-                )
-            }
-
-            return VerificationViewModel() as T
-        }
-    }
-
-
-// --------------------------------------------------
-// Splash duration
-// --------------------------------------------------
-
-private const val SPLASH_DURATION_MILLIS =
-    1_750L

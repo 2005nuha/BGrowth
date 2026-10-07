@@ -2,22 +2,19 @@ package com.example.bgrowth.data.model
 
 import com.google.gson.annotations.SerializedName
 
-data class CreateProductRequest(
-    val name: String,
+data class UpdateProductRequest(
+    val name: String? = null,
 
     @SerializedName("selling_price")
-    val sellingPrice: String,
+    val sellingPrice: String? = null,
 
     val category: Int? = null,
 
-    val description: String = "",
+    val description: String? = null,
 
     @SerializedName("cost_price")
     val costPrice: String? = null,
 
     @SerializedName("minimum_stock")
-    val minimumStock: Int = 0,
-
-    @SerializedName("initial_quantity")
-    val initialQuantity: Int = 0
+    val minimumStock: Int? = null
 )

@@ -3,6 +3,7 @@ package com.example.bgrowth.ui.login
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.bgrowth.data.repository.AuthRepository
+import com.example.bgrowth.data.repository.BusinessRepository
 import java.io.IOException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,7 +14,11 @@ import kotlinx.coroutines.launch
 import retrofit2.HttpException
 
 class LoginViewModel(
-    private val authRepository: AuthRepository = AuthRepository()
+    private val authRepository: AuthRepository =
+        AuthRepository(),
+
+    private val businessRepository: BusinessRepository =
+        BusinessRepository()
 ) : ViewModel() {
 
     private val _uiState =
@@ -29,7 +34,8 @@ class LoginViewModel(
                 email = value,
                 emailError = null,
                 loginError = null,
-                isLoginSuccessful = false
+                isLoginSuccessful = false,
+                hasBusiness = false
             )
         }
     }
@@ -41,7 +47,8 @@ class LoginViewModel(
                 password = value,
                 passwordError = null,
                 loginError = null,
-                isLoginSuccessful = false
+                isLoginSuccessful = false,
+                hasBusiness = false
             )
         }
     }
@@ -94,7 +101,8 @@ class LoginViewModel(
             it.copy(
                 isLoading = true,
                 loginError = null,
-                isLoginSuccessful = false
+                isLoginSuccessful = false,
+                hasBusiness = false
             )
         }
 
@@ -103,26 +111,41 @@ class LoginViewModel(
             try {
 
                 /*
-                 * AuthRepository.login():
+                 * STEP 1
                  *
-                 * POST /api/auth/login/
+                 * Login.
                  *
-                 * ويحفظ access + refresh tokens
-                 * داخل SessionManager عند النجاح.
+                 * AuthRepository يحفظ
+                 * access + refresh tokens.
                  */
                 authRepository.login(
                     email =
                         state.email.trim(),
-
                     password =
                         state.password
                 )
 
+                /*
+                 * STEP 2
+                 *
+                 * بعد وجود Access Token
+                 * نفحص هل المستخدم لديه Business.
+                 */
+                val hasBusiness =
+                    checkIfBusinessExists()
+
+                /*
+                 * STEP 3
+                 *
+                 * نبلغ الشاشة بنجاح Login
+                 * وبنتيجة Business check.
+                 */
                 _uiState.update {
                     it.copy(
                         isLoading = false,
                         loginError = null,
-                        isLoginSuccessful = true
+                        isLoginSuccessful = true,
+                        hasBusiness = hasBusiness
                     )
                 }
 
@@ -136,79 +159,7 @@ class LoginViewModel(
                 e: HttpException
             ) {
 
-                val errorBody =
-                    try {
-
-                        e.response()
-                            ?.errorBody()
-                            ?.string()
-
-                    } catch (
-                        _: Exception
-                    ) {
-
-                        null
-                    }
-
-                val message =
-                    when (e.code()) {
-
-                        /*
-                         * Backend يستخدم 400
-                         * عند email/password غير صحيحين.
-                         */
-                        400 -> {
-
-                            if (
-                                errorBody
-                                    ?.contains(
-                                        "Invalid email or password",
-                                        ignoreCase = true
-                                    ) == true
-                            ) {
-
-                                "Invalid email or password."
-
-                            } else {
-
-                                errorBody
-                                    ?.takeIf(
-                                        String::isNotBlank
-                                    )
-                                    ?: "Please check your information and try again."
-                            }
-                        }
-
-                        /*
-                         * Login endpoint public.
-                         *
-                         * لو ظهر 401 هنا، فهذا غير طبيعي
-                         * ويشير لمشكلة Backend أو Networking config.
-                         */
-                        401 ->
-                            "Authentication request was rejected by the server."
-
-                        429 ->
-                            "Too many requests. Please try again later."
-
-                        in 500..599 ->
-                            "Server error. Please try again later."
-
-                        else ->
-                            errorBody
-                                ?.takeIf(
-                                    String::isNotBlank
-                                )
-                                ?: "Error ${e.code()}. Please try again."
-                    }
-
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        isLoginSuccessful = false,
-                        loginError = message
-                    )
-                }
+                handleLoginHttpException(e)
 
             } catch (
                 e: IOException
@@ -218,6 +169,7 @@ class LoginViewModel(
                     it.copy(
                         isLoading = false,
                         isLoginSuccessful = false,
+                        hasBusiness = false,
                         loginError =
                             "Cannot reach the server. Check your connection."
                     )
@@ -231,6 +183,7 @@ class LoginViewModel(
                     it.copy(
                         isLoading = false,
                         isLoginSuccessful = false,
+                        hasBusiness = false,
                         loginError =
                             e.message
                                 ?.takeIf(
@@ -244,8 +197,122 @@ class LoginViewModel(
     }
 
     /*
-     * نستدعيها بعد ما الشاشة تنتقل
-     * حتى لا يتكرر Navigation عند recomposition.
+     * GET /api/business/
+     *
+     * 200:
+     * المستخدم لديه Business.
+     *
+     * 404:
+     * المستخدم لم ينشئ Business بعد.
+     *
+     * أي status آخر:
+     * مشكلة حقيقية ولا نعتبرها
+     * "Business غير موجود".
+     */
+    private suspend fun checkIfBusinessExists(): Boolean {
+
+        return try {
+
+            businessRepository.getBusiness()
+
+            true
+
+        } catch (
+            e: HttpException
+        ) {
+
+            if (e.code() == 404) {
+
+                false
+
+            } else {
+
+                throw e
+            }
+        }
+    }
+
+    private fun handleLoginHttpException(
+        e: HttpException
+    ) {
+
+        val errorBody =
+            try {
+
+                e.response()
+                    ?.errorBody()
+                    ?.string()
+
+            } catch (
+                _: Exception
+            ) {
+
+                null
+            }
+
+        val message =
+            when (e.code()) {
+
+                /*
+                 * Login API يستخدم 400
+                 * عند credentials غير صحيحة.
+                 */
+                400 -> {
+
+                    if (
+                        errorBody
+                            ?.contains(
+                                "Invalid email or password",
+                                ignoreCase = true
+                            ) == true
+                    ) {
+
+                        "Invalid email or password."
+
+                    } else {
+
+                        errorBody
+                            ?.takeIf(
+                                String::isNotBlank
+                            )
+                            ?: "Please check your information and try again."
+                    }
+                }
+
+                401 ->
+                    "Your session could not be authenticated. Please log in again."
+
+                403 ->
+                    "You do not have permission to perform this action."
+
+                429 ->
+                    "Too many requests. Please try again later."
+
+                in 500..599 ->
+                    "Server error. Please try again later."
+
+                else ->
+                    errorBody
+                        ?.takeIf(
+                            String::isNotBlank
+                        )
+                        ?: "Error ${e.code()}. Please try again."
+            }
+
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                isLoginSuccessful = false,
+                hasBusiness = false,
+                loginError = message
+            )
+        }
+    }
+
+    /*
+     * بعد تنفيذ Navigation
+     * نمسح event حتى لا يتكرر
+     * عند recomposition.
      */
     fun consumeLoginSuccess() {
 

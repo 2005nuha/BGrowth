@@ -1,8 +1,6 @@
 package com.example.bgrowth.ui.login
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -26,10 +24,8 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -59,45 +55,74 @@ private val LoginSecondaryText = Color(0xFF5E6B63)
 private val LoginMutedText = Color(0xFF8A958E)
 private val LoginBorder = Color(0xFFD9E3DA)
 private val LoginError = Color(0xFFD9534F)
-private val LoginSuccess = Color(0xFF1F8A61)
 
 @Composable
 fun LoginScreen(
     onBackClick: () -> Unit,
     onCreateAccountClick: () -> Unit,
-    onLoginSuccess: () -> Unit,
+    onBusinessSetupRequired: () -> Unit,
+    onDashboardRequired: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LoginViewModel = viewModel(),
-    onForgotPasswordClick: () -> Unit = {},
-    onGoogleClick: () -> Unit = {}
+    onForgotPasswordClick: () -> Unit = {}
 ) {
+
     val uiState by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(uiState.isLoginSuccessful) {
+    /*
+     * Login ناجح:
+     *
+     * hasBusiness = true
+     * → Dashboard
+     *
+     * hasBusiness = false
+     * → Business Setup
+     */
+    LaunchedEffect(
+        uiState.isLoginSuccessful,
+        uiState.hasBusiness
+    ) {
+
         if (uiState.isLoginSuccessful) {
+
+            val hasBusiness =
+                uiState.hasBusiness
+
             viewModel.consumeLoginSuccess()
-            onLoginSuccess()
+
+            if (hasBusiness) {
+
+                onDashboardRequired()
+
+            } else {
+
+                onBusinessSetupRequired()
+            }
         }
     }
 
     val message =
-        uiState.loginError ?: uiState.emailError ?: uiState.passwordError
-
-    val isError = message != null
+        uiState.loginError
+            ?: uiState.emailError
+            ?: uiState.passwordError
 
     LoginContent(
         email = uiState.email,
         password = uiState.password,
         message = message,
-        isError = isError,
         isLoading = uiState.isLoading,
-        onEmailChange = viewModel::onEmailChange,
-        onPasswordChange = viewModel::onPasswordChange,
-        onLoginClick = viewModel::login,
-        onBackClick = onBackClick,
-        onForgotPasswordClick = onForgotPasswordClick,
-        onGoogleClick = onGoogleClick,
-        onCreateAccountClick = onCreateAccountClick,
+        onEmailChange =
+            viewModel::onEmailChange,
+        onPasswordChange =
+            viewModel::onPasswordChange,
+        onLoginClick =
+            viewModel::login,
+        onBackClick =
+            onBackClick,
+        onForgotPasswordClick =
+            onForgotPasswordClick,
+        onCreateAccountClick =
+            onCreateAccountClick,
         modifier = modifier
     )
 }
@@ -107,17 +132,16 @@ private fun LoginContent(
     email: String,
     password: String,
     message: String?,
-    isError: Boolean,
     isLoading: Boolean,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
     onLoginClick: () -> Unit,
     onBackClick: () -> Unit,
     onForgotPasswordClick: () -> Unit,
-    onGoogleClick: () -> Unit,
     onCreateAccountClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+
     BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
@@ -125,25 +149,40 @@ private fun LoginContent(
             .safeDrawingPadding()
             .imePadding()
     ) {
-        val compactHeight = maxHeight < 720.dp
+
+        val compactHeight =
+            maxHeight < 720.dp
 
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier =
+                Modifier.fillMaxSize()
         ) {
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp)
-                    .padding(horizontal = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(
+                        horizontal = 8.dp
+                    ),
+                verticalAlignment =
+                    Alignment.CenterVertically
             ) {
+
                 IconButton(
-                    onClick = onBackClick
+                    onClick = onBackClick,
+                    enabled = !isLoading
                 ) {
+
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = LoginPrimary
+                        imageVector =
+                            Icons.AutoMirrored
+                                .Filled
+                                .ArrowBack,
+                        contentDescription =
+                            "Back",
+                        tint =
+                            LoginPrimary
                     )
                 }
             }
@@ -151,123 +190,197 @@ private fun LoginContent(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Spacer(
-                    modifier = Modifier.height(
-                        if (compactHeight) 26.dp else 78.dp
+                    .verticalScroll(
+                        rememberScrollState()
                     )
+                    .padding(
+                        horizontal = 24.dp
+                    ),
+                horizontalAlignment =
+                    Alignment.CenterHorizontally
+            ) {
+
+                Spacer(
+                    modifier =
+                        Modifier.height(
+                            if (compactHeight) {
+                                26.dp
+                            } else {
+                                78.dp
+                            }
+                        )
                 )
 
                 Text(
                     text = "Welcome Back",
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier =
+                        Modifier.fillMaxWidth(),
                     color = LoginPrimary,
                     fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight =
+                        FontWeight.Bold,
                     lineHeight = 35.sp,
-                    textAlign = TextAlign.Center
+                    textAlign =
+                        TextAlign.Center
                 )
 
                 Spacer(
-                    modifier = Modifier.height(8.dp)
+                    modifier =
+                        Modifier.height(8.dp)
                 )
 
                 Text(
-                    text = "Log in to continue managing your business.",
-                    modifier = Modifier.fillMaxWidth(),
-                    color = LoginSecondaryText,
+                    text =
+                        "Log in to continue managing your business.",
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    color =
+                        LoginSecondaryText,
                     fontSize = 15.sp,
                     lineHeight = 22.sp,
-                    textAlign = TextAlign.Center
+                    textAlign =
+                        TextAlign.Center
                 )
 
                 Spacer(
-                    modifier = Modifier.height(
-                        if (compactHeight) 22.dp else 30.dp
-                    )
+                    modifier =
+                        Modifier.height(
+                            if (compactHeight) {
+                                22.dp
+                            } else {
+                                30.dp
+                            }
+                        )
                 )
 
                 OutlinedTextField(
                     value = email,
-                    onValueChange = onEmailChange,
-                    modifier = Modifier.fillMaxWidth(),
+                    onValueChange =
+                        onEmailChange,
+                    modifier =
+                        Modifier.fillMaxWidth(),
                     label = {
-                        Text("Email Address")
+                        Text(
+                            "Email Address"
+                        )
                     },
                     trailingIcon = {
+
                         Icon(
-                            imageVector = Icons.Filled.Email,
-                            contentDescription = "Email address",
-                            tint = LoginSecondaryText
+                            imageVector =
+                                Icons.Filled.Email,
+                            contentDescription =
+                                "Email address",
+                            tint =
+                                LoginSecondaryText
                         )
                     },
                     enabled = !isLoading,
                     singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Email,
-                        imeAction = ImeAction.Next
-                    ),
-                    colors = loginTextFieldColors()
+                    shape =
+                        RoundedCornerShape(
+                            14.dp
+                        ),
+                    keyboardOptions =
+                        KeyboardOptions(
+                            keyboardType =
+                                KeyboardType.Email,
+                            imeAction =
+                                ImeAction.Next
+                        ),
+                    colors =
+                        loginTextFieldColors()
                 )
 
                 Spacer(
-                    modifier = Modifier.height(14.dp)
+                    modifier =
+                        Modifier.height(14.dp)
                 )
 
                 OutlinedTextField(
                     value = password,
-                    onValueChange = onPasswordChange,
-                    modifier = Modifier.fillMaxWidth(),
+                    onValueChange =
+                        onPasswordChange,
+                    modifier =
+                        Modifier.fillMaxWidth(),
                     label = {
                         Text("Password")
                     },
                     trailingIcon = {
+
                         Icon(
-                            imageVector = Icons.Filled.Lock,
-                            contentDescription = "Password",
-                            tint = LoginSecondaryText
+                            imageVector =
+                                Icons.Filled.Lock,
+                            contentDescription =
+                                "Password",
+                            tint =
+                                LoginSecondaryText
                         )
                     },
                     enabled = !isLoading,
                     singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Password,
-                        imeAction = ImeAction.Done
-                    ),
-                    colors = loginTextFieldColors()
+                    shape =
+                        RoundedCornerShape(
+                            14.dp
+                        ),
+                    visualTransformation =
+                        PasswordVisualTransformation(),
+                    keyboardOptions =
+                        KeyboardOptions(
+                            keyboardType =
+                                KeyboardType.Password,
+                            imeAction =
+                                ImeAction.Done
+                        ),
+                    colors =
+                        loginTextFieldColors()
                 )
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(44.dp),
-                    contentAlignment = Alignment.CenterEnd
+                Row(
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    verticalAlignment =
+                        Alignment.CenterVertically
                 ) {
+
+                    Spacer(
+                        modifier =
+                            Modifier.weight(1f)
+                    )
+
                     TextButton(
-                        onClick = onForgotPasswordClick,
-                        contentPadding = PaddingValues(
-                            horizontal = 0.dp
-                        )
+                        onClick =
+                            onForgotPasswordClick,
+                        enabled =
+                            !isLoading,
+                        contentPadding =
+                            PaddingValues(
+                                horizontal = 0.dp
+                            )
                     ) {
+
                         Text(
-                            text = "Forgot Password?",
-                            color = LoginPrimary,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium
+                            text =
+                                "Forgot Password?",
+                            color =
+                                LoginPrimary,
+                            fontSize =
+                                14.sp,
+                            fontWeight =
+                                FontWeight.Medium
                         )
                     }
                 }
 
                 Spacer(
-                    modifier = Modifier.height(
-                        if (compactHeight) 10.dp else 18.dp
-                    )
+                    modifier =
+                        Modifier.height(
+                            if (compactHeight) {
+                                10.dp
+                            } else {
+                                18.dp
+                            }
+                        )
                 )
 
                 Button(
@@ -276,119 +389,87 @@ private fun LoginContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = LoginPrimary,
-                        contentColor = LoginSurface,
-                        disabledContainerColor = LoginPrimary.copy(
-                            alpha = 0.65f
+                    shape =
+                        RoundedCornerShape(
+                            16.dp
                         ),
-                        disabledContentColor = LoginSurface
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(
-                        defaultElevation = 0.dp
-                    )
+                    colors =
+                        ButtonDefaults
+                            .buttonColors(
+                                containerColor =
+                                    LoginPrimary,
+                                contentColor =
+                                    LoginSurface,
+                                disabledContainerColor =
+                                    LoginPrimary.copy(
+                                        alpha = 0.65f
+                                    ),
+                                disabledContentColor =
+                                    LoginSurface
+                            ),
+                    elevation =
+                        ButtonDefaults
+                            .buttonElevation(
+                                defaultElevation =
+                                    0.dp
+                            )
                 ) {
+
                     if (isLoading) {
+
                         CircularProgressIndicator(
-                            modifier = Modifier.size(22.dp),
-                            color = LoginSurface,
-                            strokeWidth = 2.dp
+                            modifier =
+                                Modifier.size(
+                                    22.dp
+                                ),
+                            color =
+                                LoginSurface,
+                            strokeWidth =
+                                2.dp
                         )
+
                     } else {
+
                         Text(
                             text = "Log in",
                             fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight =
+                                FontWeight.SemiBold
                         )
                     }
                 }
 
                 message?.let {
+
                     Spacer(
-                        modifier = Modifier.height(14.dp)
+                        modifier =
+                            Modifier.height(
+                                14.dp
+                            )
                     )
 
                     Text(
                         text = it,
-                        modifier = Modifier.fillMaxWidth(),
-                        color = if (isError) {
-                            LoginError
-                        } else {
-                            LoginSuccess
-                        },
+                        modifier =
+                            Modifier.fillMaxWidth(),
+                        color =
+                            LoginError,
                         fontSize = 13.sp,
                         lineHeight = 18.sp,
-                        textAlign = TextAlign.Center
+                        textAlign =
+                            TextAlign.Center
                     )
                 }
 
                 Spacer(
-                    modifier = Modifier.height(
-                        if (compactHeight) 16.dp else 24.dp
-                    )
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    HorizontalDivider(
-                        modifier = Modifier.weight(1f),
-                        color = LoginBorder
-                    )
-
-                    Text(
-                        text = "or",
-                        modifier = Modifier.padding(
-                            horizontal = 14.dp
-                        ),
-                        color = LoginMutedText,
-                        fontSize = 14.sp
-                    )
-
-                    HorizontalDivider(
-                        modifier = Modifier.weight(1f),
-                        color = LoginBorder
-                    )
-                }
-
-                Spacer(
-                    modifier = Modifier.height(
-                        if (compactHeight) 16.dp else 24.dp
-                    )
-                )
-
-                OutlinedButton(
-                    onClick = onGoogleClick,
-                    enabled = !isLoading,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(
-                        1.dp,
-                        LoginBorder
-                    ),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = LoginSurface,
-                        contentColor = LoginPrimary
-                    )
-                ) {
-                    Box(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Continue to Google",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Medium
+                    modifier =
+                        Modifier.height(
+                            if (compactHeight) {
+                                24.dp
+                            } else {
+                                32.dp
+                            }
                         )
-                    }
-                }
-
-                Spacer(
-                    modifier = Modifier.height(24.dp)
                 )
             }
 
@@ -397,40 +478,57 @@ private fun LoginContent(
                     .fillMaxWidth()
                     .padding(
                         horizontal = 24.dp,
-                        vertical = if (compactHeight) {
-                            8.dp
-                        } else {
-                            12.dp
-                        }
+                        vertical =
+                            if (compactHeight) {
+                                8.dp
+                            } else {
+                                12.dp
+                            }
                     ),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment =
+                    Alignment.CenterVertically
             ) {
+
                 Spacer(
-                    modifier = Modifier.weight(1f)
+                    modifier =
+                        Modifier.weight(1f)
                 )
 
                 Text(
-                    text = "Don't have an account?",
-                    color = LoginMutedText,
-                    fontSize = 14.sp
+                    text =
+                        "Don't have an account?",
+                    color =
+                        LoginMutedText,
+                    fontSize =
+                        14.sp
                 )
 
                 TextButton(
-                    onClick = onCreateAccountClick,
-                    contentPadding = PaddingValues(
-                        horizontal = 5.dp
-                    )
+                    onClick =
+                        onCreateAccountClick,
+                    enabled =
+                        !isLoading,
+                    contentPadding =
+                        PaddingValues(
+                            horizontal = 5.dp
+                        )
                 ) {
+
                     Text(
-                        text = "Create Account",
-                        color = LoginPrimary,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold
+                        text =
+                            "Create Account",
+                        color =
+                            LoginPrimary,
+                        fontSize =
+                            14.sp,
+                        fontWeight =
+                            FontWeight.SemiBold
                     )
                 }
 
                 Spacer(
-                    modifier = Modifier.weight(1f)
+                    modifier =
+                        Modifier.weight(1f)
                 )
             }
         }
@@ -440,13 +538,20 @@ private fun LoginContent(
 @Composable
 private fun loginTextFieldColors() =
     OutlinedTextFieldDefaults.colors(
-        focusedBorderColor = LoginPrimary,
-        unfocusedBorderColor = LoginBorder,
-        focusedLabelColor = LoginPrimary,
-        unfocusedLabelColor = LoginSecondaryText,
-        cursorColor = LoginPrimary,
-        focusedContainerColor = LoginSurface,
-        unfocusedContainerColor = LoginSurface
+        focusedBorderColor =
+            LoginPrimary,
+        unfocusedBorderColor =
+            LoginBorder,
+        focusedLabelColor =
+            LoginPrimary,
+        unfocusedLabelColor =
+            LoginSecondaryText,
+        cursorColor =
+            LoginPrimary,
+        focusedContainerColor =
+            LoginSurface,
+        unfocusedContainerColor =
+            LoginSurface
     )
 
 @Preview(
@@ -457,19 +562,19 @@ private fun loginTextFieldColors() =
 )
 @Composable
 private fun LoginDefaultPreview() {
+
     BGrothTheme {
+
         LoginContent(
             email = "",
             password = "",
             message = null,
-            isError = false,
             isLoading = false,
             onEmailChange = {},
             onPasswordChange = {},
             onLoginClick = {},
             onBackClick = {},
             onForgotPasswordClick = {},
-            onGoogleClick = {},
             onCreateAccountClick = {}
         )
     }
@@ -483,19 +588,20 @@ private fun LoginDefaultPreview() {
 )
 @Composable
 private fun LoginErrorPreview() {
+
     BGrothTheme {
+
         LoginContent(
             email = "hazem@",
             password = "",
-            message = "Enter a valid email address.",
-            isError = true,
+            message =
+                "Enter a valid email address.",
             isLoading = false,
             onEmailChange = {},
             onPasswordChange = {},
             onLoginClick = {},
             onBackClick = {},
             onForgotPasswordClick = {},
-            onGoogleClick = {},
             onCreateAccountClick = {}
         )
     }
@@ -509,19 +615,21 @@ private fun LoginErrorPreview() {
 )
 @Composable
 private fun LoginLoadingPreview() {
+
     BGrothTheme {
+
         LoginContent(
-            email = "hazem@example.com",
-            password = "password123",
+            email =
+                "hazem@example.com",
+            password =
+                "password123",
             message = null,
-            isError = false,
             isLoading = true,
             onEmailChange = {},
             onPasswordChange = {},
             onLoginClick = {},
             onBackClick = {},
             onForgotPasswordClick = {},
-            onGoogleClick = {},
             onCreateAccountClick = {}
         )
     }

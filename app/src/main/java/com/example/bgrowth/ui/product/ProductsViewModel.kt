@@ -3,19 +3,24 @@ package com.example.bgrowth.ui.product
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.bgrowth.data.repository.ProductRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import java.io.IOException
 
 class ProductsViewModel(
-    private val repository: ProductRepository = ProductRepository()
+    private val repository: ProductRepository =
+        ProductRepository()
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(
-        ProductsUiState()
-    )
+    private val _uiState =
+        MutableStateFlow(
+            ProductsUiState()
+        )
 
     val uiState: StateFlow<ProductsUiState> =
         _uiState.asStateFlow()
@@ -35,46 +40,122 @@ class ProductsViewModel(
                 )
             }
 
-            repository.getProducts()
-                .onSuccess { products ->
+            try {
 
-                    val productItems = products.map { product ->
+                val products =
+                    repository.getProducts()
+
+                val categories =
+                    repository.getCategories()
+
+                val categoryNamesById =
+                    categories.associate {
+                        it.id to it.name
+                    }
+
+                val productItems =
+                    products.map { product ->
 
                         ProductListItem(
                             id = product.id,
-                            name = product.name,
-                            category = product.category?.toString() ?: "",
-                            price = product.selling_price
-                                .toDoubleOrNull() ?: 0.0,
-                            trackStock = true,
-                            stockQuantity = product.quantity,
-                            minStockLevel = product.minimum_stock
+
+                            name =
+                                product.name,
+
+                            categoryId =
+                                product.category,
+
+                            categoryName =
+                                product.category
+                                    ?.let {
+                                        categoryNamesById[it]
+                                    }
+                                    .orEmpty(),
+
+                            price =
+                                product.sellingPrice
+                                    .toDoubleOrNull()
+                                    ?: 0.0,
+
+                            stockQuantity =
+                                product.quantity,
+
+                            minStockLevel =
+                                product.minimumStock
                         )
                     }
 
-                    _uiState.update {
-                        it.copy(
-                            products = productItems,
-                            isLoading = false,
-                            errorMessage = null
-                        )
-                    }
-                }
-                .onFailure { error ->
+                _uiState.update {
+                    it.copy(
+                        products =
+                            productItems,
 
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage =
-                                error.message
-                                    ?: "Failed to load products."
-                        )
-                    }
+                        isLoading = false,
+
+                        errorMessage =
+                            null
+                    )
                 }
+
+            } catch (
+                e: CancellationException
+            ) {
+
+                throw e
+
+            } catch (
+                e: HttpException
+            ) {
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage =
+                            when (e.code()) {
+
+                                401 ->
+                                    "Your session has expired. Please log in again."
+
+                                404 ->
+                                    "Business was not found."
+
+                                else ->
+                                    "Failed to load products."
+                            }
+                    )
+                }
+
+            } catch (
+                e: IOException
+            ) {
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage =
+                            "Unable to connect to the server."
+                    )
+                }
+
+            } catch (
+                e: Exception
+            ) {
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage =
+                            e.message
+                                ?: "Failed to load products."
+                    )
+                }
+            }
         }
     }
 
-    fun onSearchQueryChange(value: String) {
+    fun onSearchQueryChange(
+        value: String
+    ) {
 
         _uiState.update {
             it.copy(
@@ -83,20 +164,26 @@ class ProductsViewModel(
         }
     }
 
-    fun onCategorySelected(category: String?) {
+    fun onCategorySelected(
+        category: String?
+    ) {
 
         _uiState.update {
             it.copy(
-                selectedCategory = category
+                selectedCategory =
+                    category
             )
         }
     }
 
-    fun openProductMenu(productId: Int) {
+    fun openProductMenu(
+        productId: Int
+    ) {
 
         _uiState.update {
             it.copy(
-                openedMenuProductId = productId
+                openedMenuProductId =
+                    productId
             )
         }
     }
@@ -105,7 +192,8 @@ class ProductsViewModel(
 
         _uiState.update {
             it.copy(
-                openedMenuProductId = null
+                openedMenuProductId =
+                    null
             )
         }
     }
@@ -116,8 +204,14 @@ class ProductsViewModel(
 
         _uiState.update {
             it.copy(
-                openedMenuProductId = null,
-                productPendingDelete = product
+                openedMenuProductId =
+                    null,
+
+                productPendingDelete =
+                    product,
+
+                errorMessage =
+                    null
             )
         }
     }
@@ -126,7 +220,8 @@ class ProductsViewModel(
 
         _uiState.update {
             it.copy(
-                productPendingDelete = null
+                productPendingDelete =
+                    null
             )
         }
     }
@@ -134,20 +229,150 @@ class ProductsViewModel(
     fun confirmDeleteProduct() {
 
         val product =
-            _uiState.value.productPendingDelete
+            _uiState
+                .value
+                .productPendingDelete
                 ?: return
 
-        // مؤقتًا نحذف من الواجهة فقط.
-        // لاحقًا نربطه مع Delete Product API.
+        viewModelScope.launch {
 
-        _uiState.update {
+            _uiState.update {
+                it.copy(
+                    isDeleting = true,
+                    errorMessage = null
+                )
+            }
 
-            it.copy(
-                products = it.products.filter { item ->
-                    item.id != product.id
-                },
-                productPendingDelete = null
-            )
+            try {
+
+                repository.deleteProduct(
+                    productId = product.id
+                )
+
+                /*
+                 * بعد نجاح DELETE
+                 * نعيد القراءة من السيرفر.
+                 */
+                val products =
+                    repository.getProducts()
+
+                val categories =
+                    repository.getCategories()
+
+                val categoryNamesById =
+                    categories.associate {
+                        it.id to it.name
+                    }
+
+                val productItems =
+                    products.map { item ->
+
+                        ProductListItem(
+                            id = item.id,
+
+                            name = item.name,
+
+                            categoryId =
+                                item.category,
+
+                            categoryName =
+                                item.category
+                                    ?.let {
+                                        categoryNamesById[it]
+                                    }
+                                    .orEmpty(),
+
+                            price =
+                                item.sellingPrice
+                                    .toDoubleOrNull()
+                                    ?: 0.0,
+
+                            stockQuantity =
+                                item.quantity,
+
+                            minStockLevel =
+                                item.minimumStock
+                        )
+                    }
+
+                _uiState.update {
+                    it.copy(
+                        products =
+                            productItems,
+
+                        productPendingDelete =
+                            null,
+
+                        isDeleting =
+                            false,
+
+                        errorMessage =
+                            null
+                    )
+                }
+
+            } catch (
+                e: CancellationException
+            ) {
+
+                throw e
+
+            } catch (
+                e: HttpException
+            ) {
+
+                _uiState.update {
+                    it.copy(
+                        isDeleting = false,
+
+                        productPendingDelete =
+                            null,
+
+                        errorMessage =
+                            when (e.code()) {
+
+                                400 ->
+                                    "This product cannot be deleted because it has sales."
+
+                                401 ->
+                                    "Your session has expired. Please log in again."
+
+                                404 ->
+                                    "Product was not found."
+
+                                else ->
+                                    "Failed to delete product."
+                            }
+                    )
+                }
+
+            } catch (
+                e: IOException
+            ) {
+
+                _uiState.update {
+                    it.copy(
+                        isDeleting = false,
+
+                        errorMessage =
+                            "Unable to connect to the server."
+                    )
+                }
+
+            } catch (
+                e: Exception
+            ) {
+
+                _uiState.update {
+                    it.copy(
+                        isDeleting = false,
+
+                        errorMessage =
+                            e.message
+                                ?: "Failed to delete product."
+                    )
+                }
+            }
         }
     }
 }

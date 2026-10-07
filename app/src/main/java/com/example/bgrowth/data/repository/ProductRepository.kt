@@ -1,105 +1,166 @@
 package com.example.bgrowth.data.repository
 
+import com.example.bgrowth.data.model.AdjustStockRequest
 import com.example.bgrowth.data.model.Category
 import com.example.bgrowth.data.model.CreateCategoryRequest
 import com.example.bgrowth.data.model.CreateProductRequest
 import com.example.bgrowth.data.model.Product
+import com.example.bgrowth.data.model.UpdateCategoryRequest
+import com.example.bgrowth.data.model.UpdateProductRequest
 import com.example.bgrowth.data.remote.ProductApi
 import com.example.bgrowth.data.remote.RetrofitClient
 
 class ProductRepository(
-    private val api: ProductApi = RetrofitClient.productApi
+    private val api: ProductApi =
+        RetrofitClient.productApi
 ) {
 
-    suspend fun getProducts(): Result<List<Product>> {
-        return try {
-            val response = api.getProducts()
+    // ==================================================
+    // Products
+    // ==================================================
 
-            if (response.isSuccessful) {
-                Result.success(response.body().orEmpty())
-            } else {
-                Result.failure(
-                    Exception(
-                        "Failed to load products. Code: ${response.code()}"
-                    )
-                )
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+    suspend fun getProducts(
+        search: String? = null,
+        ordering: String? = null
+    ): List<Product> {
+
+        return api.getProducts(
+            search = search,
+            ordering = ordering
+        )
+    }
+
+    suspend fun getProduct(
+        productId: Int
+    ): Product {
+
+        return api.getProduct(
+            productId = productId
+        )
     }
 
     suspend fun createProduct(
         request: CreateProductRequest
-    ): Result<Product> {
-        return try {
-            val response = api.createProduct(request)
+    ): Product {
 
-            if (response.isSuccessful) {
-                val product = response.body()
-
-                if (product != null) {
-                    Result.success(product)
-                } else {
-                    Result.failure(
-                        Exception("Empty product response.")
-                    )
-                }
-            } else {
-                Result.failure(
-                    Exception(
-                        "Failed to create product. Code: ${response.code()}"
-                    )
-                )
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+        return api.createProduct(
+            request = request
+        )
     }
 
-    suspend fun getCategories(): Result<List<Category>> {
-        return try {
-            val response = api.getCategories()
+    suspend fun updateProduct(
+        productId: Int,
+        request: UpdateProductRequest
+    ): Product {
 
-            if (response.isSuccessful) {
-                Result.success(response.body().orEmpty())
-            } else {
-                Result.failure(
-                    Exception(
-                        "Failed to load categories. Code: ${response.code()}"
-                    )
-                )
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+        return api.updateProduct(
+            productId = productId,
+            request = request
+        )
+    }
+
+    suspend fun deleteProduct(
+        productId: Int
+    ) {
+
+        api.deleteProduct(
+            productId = productId
+        )
+    }
+
+    // ==================================================
+    // Inventory
+    // ==================================================
+
+    suspend fun getLowStockProducts():
+            List<Product> {
+
+        return api.getLowStockProducts()
+    }
+
+    suspend fun getOutOfStockProducts():
+            List<Product> {
+
+        return api.getOutOfStockProducts()
+    }
+
+    suspend fun adjustStock(
+        productId: Int,
+        quantity: Int,
+        movementType: String,
+        reason: String? = null
+    ): Product {
+
+        val request =
+            AdjustStockRequest(
+                quantity = quantity,
+                movementType = movementType,
+                reason = reason
+                    ?.trim()
+                    ?.takeIf {
+                        it.isNotEmpty()
+                    }
+            )
+
+        return api.adjustStock(
+            productId = productId,
+            request = request
+        )
+    }
+
+    // ==================================================
+    // Categories
+    // ==================================================
+
+    suspend fun getCategories():
+            List<Category> {
+
+        return api.getCategories()
+    }
+
+    suspend fun getCategory(
+        categoryId: Int
+    ): Category {
+
+        return api.getCategory(
+            categoryId = categoryId
+        )
     }
 
     suspend fun createCategory(
-        request: CreateCategoryRequest
-    ): Result<Category> {
-        return try {
-            val response = api.createCategory(request)
+        name: String,
+        description: String = ""
+    ): Category {
 
-            if (response.isSuccessful) {
-                val category = response.body()
+        val request =
+            CreateCategoryRequest(
+                name = name.trim(),
+                description =
+                    description.trim()
+            )
 
-                if (category != null) {
-                    Result.success(category)
-                } else {
-                    Result.failure(
-                        Exception("Empty category response.")
-                    )
-                }
-            } else {
-                Result.failure(
-                    Exception(
-                        "Failed to create category. Code: ${response.code()}"
-                    )
-                )
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+        return api.createCategory(
+            request = request
+        )
+    }
+
+    suspend fun updateCategory(
+        categoryId: Int,
+        request: UpdateCategoryRequest
+    ): Category {
+
+        return api.updateCategory(
+            categoryId = categoryId,
+            request = request
+        )
+    }
+
+    suspend fun deleteCategory(
+        categoryId: Int
+    ) {
+
+        api.deleteCategory(
+            categoryId = categoryId
+        )
     }
 }

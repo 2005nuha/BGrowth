@@ -2,7 +2,7 @@ package com.example.bgrowth.ui.product
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.bgrowth.data.model.CreateProductRequest
+import com.example.bgrowth.data.model.UpdateProductRequest
 import com.example.bgrowth.data.repository.ProductRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,18 +13,141 @@ import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
 
-class AddProductViewModel(
+class EditProductViewModel(
     private val repository: ProductRepository =
         ProductRepository()
 ) : ViewModel() {
 
     private val _uiState =
         MutableStateFlow(
-            AddProductUiState()
+            EditProductUiState()
         )
 
-    val uiState: StateFlow<AddProductUiState> =
+    val uiState: StateFlow<EditProductUiState> =
         _uiState.asStateFlow()
+
+    private var loadedProductId: Int? = null
+
+    fun loadProduct(
+        productId: Int
+    ) {
+
+        if (
+            loadedProductId == productId &&
+            _uiState.value.productId == productId
+        ) {
+            return
+        }
+
+        loadedProductId = productId
+
+        viewModelScope.launch {
+
+            _uiState.update {
+                it.copy(
+                    isLoading = true,
+                    errorMessage = null
+                )
+            }
+
+            try {
+
+                val product =
+                    repository.getProduct(
+                        productId = productId
+                    )
+
+                val categories =
+                    repository.getCategories()
+
+                val categoryOptions =
+                    categories.map {
+                        CategoryOption(
+                            id = it.id,
+                            name = it.name
+                        )
+                    }
+
+                val selectedCategory =
+                    product.category?.let { id ->
+                        categories.firstOrNull {
+                            it.id == id
+                        }
+                    }
+
+                _uiState.update {
+                    it.copy(
+                        productId = product.id,
+                        productName = product.name,
+                        categoryId = product.category,
+                        categoryName =
+                            selectedCategory?.name.orEmpty(),
+                        description = product.description,
+                        price = product.sellingPrice,
+                        cost = product.costPrice.orEmpty(),
+                        minStockLevel =
+                            product.minimumStock.toString(),
+                        categories = categoryOptions,
+                        isLoading = false,
+                        errorMessage = null
+                    )
+                }
+
+            } catch (
+                e: CancellationException
+            ) {
+
+                throw e
+
+            } catch (
+                e: HttpException
+            ) {
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage =
+                            when (e.code()) {
+
+                                401 ->
+                                    "Your session has expired. Please log in again."
+
+                                404 ->
+                                    "Product was not found."
+
+                                else ->
+                                    "Failed to load product."
+                            }
+                    )
+                }
+
+            } catch (
+                e: IOException
+            ) {
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage =
+                            "Unable to connect to the server."
+                    )
+                }
+
+            } catch (
+                e: Exception
+            ) {
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage =
+                            e.message
+                                ?: "Failed to load product."
+                    )
+                }
+            }
+        }
+    }
 
     fun onProductNameChange(
         value: String
@@ -39,14 +162,14 @@ class AddProductViewModel(
         }
     }
 
-    fun onCategoryNameChange(
-        value: String
+    fun onCategorySelected(
+        category: CategoryOption?
     ) {
 
         _uiState.update {
             it.copy(
-                categoryName = value,
-                categoryError = null,
+                categoryId = category?.id,
+                categoryName = category?.name.orEmpty(),
                 errorMessage = null
             )
         }
@@ -106,35 +229,14 @@ class AddProductViewModel(
         }
     }
 
-    fun onOpeningStockChange(
-        value: String
-    ) {
-
-        if (
-            value.isEmpty() ||
-            value.all {
-                    char -> char.isDigit()
-            }
-        ) {
-
-            _uiState.update {
-                it.copy(
-                    openingStock = value,
-                    openingStockError = null,
-                    errorMessage = null
-                )
-            }
-        }
-    }
-
     fun onMinStockLevelChange(
         value: String
     ) {
 
         if (
             value.isEmpty() ||
-            value.all {
-                    char -> char.isDigit()
+            value.all { char ->
+                char.isDigit()
             }
         ) {
 
@@ -148,16 +250,17 @@ class AddProductViewModel(
         }
     }
 
-    fun saveProduct() {
+    fun updateProduct() {
 
         val state =
             _uiState.value
 
+        val productId =
+            state.productId
+                ?: return
+
         val productName =
             state.productName.trim()
-
-        val categoryName =
-            state.categoryName.trim()
 
         val price =
             state.price.toDoubleOrNull()
@@ -168,14 +271,6 @@ class AddProductViewModel(
                     it.isNotBlank()
                 }
                 ?.toDoubleOrNull()
-
-        val openingStock =
-            state.openingStock
-                .takeIf {
-                    it.isNotBlank()
-                }
-                ?.toIntOrNull()
-                ?: 0
 
         val minStock =
             state.minStockLevel
@@ -188,13 +283,6 @@ class AddProductViewModel(
         val productNameError =
             if (productName.isBlank()) {
                 "Product name is required"
-            } else {
-                null
-            }
-
-        val categoryError =
-            if (categoryName.isBlank()) {
-                "Category is required"
             } else {
                 null
             }
@@ -222,16 +310,6 @@ class AddProductViewModel(
                 null
             }
 
-        val openingStockError =
-            if (
-                state.openingStock.isNotBlank() &&
-                state.openingStock.toIntOrNull() == null
-            ) {
-                "Enter a valid opening stock"
-            } else {
-                null
-            }
-
         val minStockLevelError =
             if (
                 state.minStockLevel.isNotBlank() &&
@@ -244,10 +322,8 @@ class AddProductViewModel(
 
         if (
             productNameError != null ||
-            categoryError != null ||
             priceError != null ||
             costError != null ||
-            openingStockError != null ||
             minStockLevelError != null
         ) {
 
@@ -256,17 +332,11 @@ class AddProductViewModel(
                     productNameError =
                         productNameError,
 
-                    categoryError =
-                        categoryError,
-
                     priceError =
                         priceError,
 
                     costError =
                         costError,
-
-                    openingStockError =
-                        openingStockError,
 
                     minStockLevelError =
                         minStockLevelError
@@ -280,72 +350,44 @@ class AddProductViewModel(
 
             _uiState.update {
                 it.copy(
-                    isLoading = true,
+                    isSaving = true,
                     errorMessage = null
                 )
             }
 
             try {
 
-                val categories =
-                    repository.getCategories()
-
-                var categoryId =
-                    categories
-                        .firstOrNull {
-
-                            it.name.equals(
-                                categoryName,
-                                ignoreCase = true
-                            )
-                        }
-                        ?.id
-
-                if (categoryId == null) {
-
-                    val createdCategory =
-                        repository.createCategory(
-                            name = categoryName
-                        )
-
-                    categoryId =
-                        createdCategory.id
-                }
-
                 val request =
-                    CreateProductRequest(
+                    UpdateProductRequest(
                         name = productName,
 
                         sellingPrice =
                             state.price,
 
                         category =
-                            categoryId,
+                            state.categoryId,
 
                         description =
                             state.description.trim(),
 
                         costPrice =
-                            state.cost
-                                .takeIf {
-                                    it.isNotBlank()
-                                },
+                            state.cost.takeIf {
+                                it.isNotBlank()
+                            },
 
                         minimumStock =
-                            minStock,
-
-                        initialQuantity =
-                            openingStock
+                            minStock
                     )
 
-                repository.createProduct(
+                repository.updateProduct(
+                    productId = productId,
                     request = request
                 )
 
                 _uiState.update {
                     it.copy(
-                        isLoading = false,
-                        isProductSaved = true,
+                        isSaving = false,
+                        isProductUpdated = true,
                         errorMessage = null
                     )
                 }
@@ -362,7 +404,7 @@ class AddProductViewModel(
 
                 _uiState.update {
                     it.copy(
-                        isLoading = false,
+                        isSaving = false,
                         errorMessage =
                             when (e.code()) {
 
@@ -373,10 +415,10 @@ class AddProductViewModel(
                                     "Your session has expired. Please log in again."
 
                                 404 ->
-                                    "Business was not found."
+                                    "Product was not found."
 
                                 else ->
-                                    "Failed to create product."
+                                    "Failed to update product."
                             }
                     )
                 }
@@ -387,7 +429,7 @@ class AddProductViewModel(
 
                 _uiState.update {
                     it.copy(
-                        isLoading = false,
+                        isSaving = false,
                         errorMessage =
                             "Unable to connect to the server."
                     )
@@ -399,21 +441,21 @@ class AddProductViewModel(
 
                 _uiState.update {
                     it.copy(
-                        isLoading = false,
+                        isSaving = false,
                         errorMessage =
                             e.message
-                                ?: "Something went wrong."
+                                ?: "Failed to update product."
                     )
                 }
             }
         }
     }
 
-    fun consumeProductSaved() {
+    fun consumeProductUpdated() {
 
         _uiState.update {
             it.copy(
-                isProductSaved = false
+                isProductUpdated = false
             )
         }
     }

@@ -3,26 +3,20 @@ package com.example.bgrowth.ui.product
 data class ProductListItem(
     val id: Int,
     val name: String,
-    val category: String,
+    val categoryId: Int?,
+    val categoryName: String,
     val price: Double,
-
-    val trackStock: Boolean = true,
-    val stockQuantity: Int? = null,
-    val minStockLevel: Int? = null
+    val stockQuantity: Int,
+    val minStockLevel: Int
 ) {
 
     val isOutOfStock: Boolean
         get() =
-            trackStock &&
-                    stockQuantity != null &&
-                    stockQuantity <= 0
+            stockQuantity == 0
 
     val isLowStock: Boolean
         get() =
-            trackStock &&
-                    stockQuantity != null &&
-                    minStockLevel != null &&
-                    stockQuantity > 0 &&
+            stockQuantity > 0 &&
                     stockQuantity <= minStockLevel
 }
 
@@ -35,17 +29,19 @@ data class ProductsUiState(
 
     val isLoading: Boolean = false,
 
+    val isDeleting: Boolean = false,
+
     val errorMessage: String? = null,
 
     val openedMenuProductId: Int? = null,
 
-    val productPendingDelete: ProductListItem? = null,
+    val productPendingDelete: ProductListItem? = null
 ) {
 
     val categories: List<String>
         get() =
             products
-                .map { it.category }
+                .map { it.categoryName }
                 .filter { it.isNotBlank() }
                 .distinct()
 
@@ -55,9 +51,10 @@ data class ProductsUiState(
             var result = products
 
             if (!selectedCategory.isNullOrBlank()) {
+
                 result =
                     result.filter {
-                        it.category.equals(
+                        it.categoryName.equals(
                             selectedCategory,
                             ignoreCase = true
                         )
@@ -65,13 +62,15 @@ data class ProductsUiState(
             }
 
             if (searchQuery.isNotBlank()) {
+
                 result =
                     result.filter {
+
                         it.name.contains(
                             searchQuery,
                             ignoreCase = true
                         ) ||
-                                it.category.contains(
+                                it.categoryName.contains(
                                     searchQuery,
                                     ignoreCase = true
                                 )

@@ -1,17 +1,15 @@
 package com.example.bgrowth.ui.register
 
-import com.example.bgrowth.data.model.RegisterResponse
-
 data class RegisterUiState(
-    val fullName: String = "",
+    val firstName: String = "",
+    val lastName: String = "",
     val email: String = "",
-    val phoneNumber: String = "",
     val password: String = "",
     val confirmPassword: String = "",
 
-    val fullNameError: String? = null,
+    val firstNameError: String? = null,
+    val lastNameError: String? = null,
     val emailError: String? = null,
-    val phoneNumberError: String? = null,
     val passwordError: String? = null,
     val confirmPasswordError: String? = null,
 
@@ -20,7 +18,8 @@ data class RegisterUiState(
 
     val isLoading: Boolean = false,
 
-    val registrationResult: RegisterResponse? = null,
+    val isRegistrationSuccessful: Boolean = false,
+    val hasBusiness: Boolean = false,
 
     val registrationError: String? = null
 )

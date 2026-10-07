@@ -3,6 +3,7 @@ package com.example.bgrowth.ui.register
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.bgrowth.data.repository.AuthRepository
+import com.example.bgrowth.data.repository.BusinessRepository
 import java.io.IOException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,7 +14,11 @@ import kotlinx.coroutines.launch
 import retrofit2.HttpException
 
 class RegisterViewModel(
-    private val authRepository: AuthRepository = AuthRepository()
+    private val authRepository: AuthRepository =
+        AuthRepository(),
+
+    private val businessRepository: BusinessRepository =
+        BusinessRepository()
 ) : ViewModel() {
 
     private val _uiState =
@@ -22,14 +27,28 @@ class RegisterViewModel(
     val uiState: StateFlow<RegisterUiState> =
         _uiState.asStateFlow()
 
-    fun onFullNameChange(value: String) {
+    fun onFirstNameChange(value: String) {
 
         _uiState.update {
             it.copy(
-                fullName = value,
-                fullNameError = null,
-                registrationResult = null,
-                registrationError = null
+                firstName = value,
+                firstNameError = null,
+                registrationError = null,
+                isRegistrationSuccessful = false,
+                hasBusiness = false
+            )
+        }
+    }
+
+    fun onLastNameChange(value: String) {
+
+        _uiState.update {
+            it.copy(
+                lastName = value,
+                lastNameError = null,
+                registrationError = null,
+                isRegistrationSuccessful = false,
+                hasBusiness = false
             )
         }
     }
@@ -40,30 +59,9 @@ class RegisterViewModel(
             it.copy(
                 email = value,
                 emailError = null,
-                registrationResult = null,
-                registrationError = null
-            )
-        }
-    }
-
-    /*
-     * Phone موجود حاليًا في الـUI فقط.
-     *
-     * Backend Register API لا يستقبل phone.
-     * لذلك نخزنه في UI state فقط ولا نرسله للسيرفر.
-     */
-    fun onPhoneNumberChange(value: String) {
-
-        if (!value.all(::isAllowedPhoneCharacter)) {
-            return
-        }
-
-        _uiState.update {
-            it.copy(
-                phoneNumber = value,
-                phoneNumberError = null,
-                registrationResult = null,
-                registrationError = null
+                registrationError = null,
+                isRegistrationSuccessful = false,
+                hasBusiness = false
             )
         }
     }
@@ -75,8 +73,9 @@ class RegisterViewModel(
                 password = value,
                 passwordError = null,
                 confirmPasswordError = null,
-                registrationResult = null,
-                registrationError = null
+                registrationError = null,
+                isRegistrationSuccessful = false,
+                hasBusiness = false
             )
         }
     }
@@ -87,8 +86,9 @@ class RegisterViewModel(
             it.copy(
                 confirmPassword = value,
                 confirmPasswordError = null,
-                registrationResult = null,
-                registrationError = null
+                registrationError = null,
+                isRegistrationSuccessful = false,
+                hasBusiness = false
             )
         }
     }
@@ -113,20 +113,6 @@ class RegisterViewModel(
         }
     }
 
-    fun consumeRegistrationResult() {
-
-        _uiState.update {
-            it.copy(
-                registrationResult = null
-            )
-        }
-    }
-
-    fun validateForLocalNavigation(): Boolean {
-
-        return validateInputs()
-    }
-
     fun register() {
 
         if (
@@ -136,14 +122,15 @@ class RegisterViewModel(
             return
         }
 
-        val validState =
+        val state =
             _uiState.value
 
         _uiState.update {
             it.copy(
                 isLoading = true,
-                registrationResult = null,
-                registrationError = null
+                registrationError = null,
+                isRegistrationSuccessful = false,
+                hasBusiness = false
             )
         }
 
@@ -152,58 +139,44 @@ class RegisterViewModel(
             try {
 
                 /*
-                 * الـUI يحتوي Full Name واحد.
+                 * POST /api/auth/register/
                  *
-                 * Backend يحتاج:
-                 * first_name
-                 * last_name
-                 *
-                 * نقسم الاسم عند أول مسافة.
+                 * Register endpoint يرجع tokens،
+                 * وAuthRepository يحفظها مباشرة.
                  */
-                val fullName =
-                    validState.fullName.trim()
+                authRepository.register(
+                    firstName =
+                        state.firstName.trim(),
 
-                val nameParts =
-                    fullName.split(
-                        "\\s+".toRegex(),
-                        limit = 2
-                    )
+                    lastName =
+                        state.lastName.trim(),
 
-                val firstName =
-                    nameParts
-                        .firstOrNull()
-                        .orEmpty()
+                    email =
+                        state.email.trim(),
 
-                val lastName =
-                    nameParts
-                        .getOrNull(1)
-                        .orEmpty()
+                    password =
+                        state.password,
+
+                    passwordConfirm =
+                        state.confirmPassword
+                )
 
                 /*
-                 * Register endpoint نفسه يرجع:
+                 * بما أن المستخدم أصبح authenticated،
+                 * نفحص هل لديه Business.
                  *
-                 * user + access token + refresh token
-                 *
-                 * AuthRepository يحفظ الـtokens.
-                 * لا نعمل Login ثاني.
+                 * غالبًا الحساب الجديد سيحصل على 404،
+                 * وبالتالي ينتقل إلى Business Setup.
                  */
-                val response =
-                    authRepository.register(
-                        firstName = firstName,
-                        lastName = lastName,
-                        email =
-                            validState.email.trim(),
-                        password =
-                            validState.password,
-                        passwordConfirm =
-                            validState.confirmPassword
-                    )
+                val hasBusiness =
+                    checkIfBusinessExists()
 
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        registrationResult = response,
-                        registrationError = null
+                        registrationError = null,
+                        isRegistrationSuccessful = true,
+                        hasBusiness = hasBusiness
                     )
                 }
 
@@ -217,46 +190,7 @@ class RegisterViewModel(
                 e: HttpException
             ) {
 
-                val errorBody =
-                    try {
-
-                        e.response()
-                            ?.errorBody()
-                            ?.string()
-
-                    } catch (
-                        _: Exception
-                    ) {
-
-                        null
-                    }
-
-                val message =
-                    when {
-
-                        !errorBody.isNullOrBlank() ->
-                            errorBody
-
-                        e.code() == 400 ->
-                            "Invalid registration data. Please check your information."
-
-                        e.code() == 429 ->
-                            "Too many requests. Please try again later."
-
-                        e.code() >= 500 ->
-                            "Server error. Please try again later."
-
-                        else ->
-                            "Error ${e.code()}. Please try again."
-                    }
-
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        registrationResult = null,
-                        registrationError = message
-                    )
-                }
+                handleRegisterHttpException(e)
 
             } catch (
                 e: IOException
@@ -265,7 +199,8 @@ class RegisterViewModel(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        registrationResult = null,
+                        isRegistrationSuccessful = false,
+                        hasBusiness = false,
                         registrationError =
                             "Cannot reach the server. Check your connection."
                     )
@@ -278,7 +213,8 @@ class RegisterViewModel(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        registrationResult = null,
+                        isRegistrationSuccessful = false,
+                        hasBusiness = false,
                         registrationError =
                             e.message
                                 ?.takeIf(
@@ -291,78 +227,138 @@ class RegisterViewModel(
         }
     }
 
+    private suspend fun checkIfBusinessExists(): Boolean {
+
+        return try {
+
+            businessRepository.getBusiness()
+
+            true
+
+        } catch (
+            e: HttpException
+        ) {
+
+            if (e.code() == 404) {
+
+                false
+
+            } else {
+
+                throw e
+            }
+        }
+    }
+
+    private fun handleRegisterHttpException(
+        e: HttpException
+    ) {
+
+        val errorBody =
+            try {
+
+                e.response()
+                    ?.errorBody()
+                    ?.string()
+
+            } catch (
+                _: Exception
+            ) {
+
+                null
+            }
+
+        val message =
+            when (e.code()) {
+
+                400 ->
+                    errorBody
+                        ?.takeIf(
+                            String::isNotBlank
+                        )
+                        ?: "Please check your registration information."
+
+                401 ->
+                    "Authentication request was rejected by the server."
+
+                429 ->
+                    "Too many requests. Please try again later."
+
+                in 500..599 ->
+                    "Server error. Please try again later."
+
+                else ->
+                    errorBody
+                        ?.takeIf(
+                            String::isNotBlank
+                        )
+                        ?: "Error ${e.code()}. Please try again."
+            }
+
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                isRegistrationSuccessful = false,
+                hasBusiness = false,
+                registrationError = message
+            )
+        }
+    }
+
+    fun consumeRegistrationSuccess() {
+
+        _uiState.update {
+            it.copy(
+                isRegistrationSuccessful = false
+            )
+        }
+    }
+
     private fun validateInputs(): Boolean {
 
         val state =
             _uiState.value
 
-        val fullNameError =
-            if (
-                state.fullName.isBlank()
-            ) {
-
-                "Full name is required."
-
+        val firstNameError =
+            if (state.firstName.isBlank()) {
+                "First name is required."
             } else {
-
                 null
             }
+
+        /*
+         * Backend يعتبر last_name optional،
+         * لذلك لا نجعله Required في الموبايل.
+         */
+        val lastNameError: String? =
+            null
 
         val emailError =
             when {
 
                 state.email.isBlank() ->
-
                     "Email address is required."
 
                 !EMAIL_PATTERN.matches(
                     state.email.trim()
                 ) ->
-
                     "Enter a valid email address."
 
                 else ->
-
                     null
-            }
-
-        /*
-         * Phone ليس جزءًا من Register API الحالي.
-         *
-         * إذا المستخدم كتب phone نتحقق فقط
-         * من الأحرف المسموحة.
-         *
-         * لكنه ليس required.
-         */
-        val phoneNumberError =
-            if (
-                state.phoneNumber.isNotBlank() &&
-                !state.phoneNumber.all(
-                    ::isAllowedPhoneCharacter
-                )
-            ) {
-
-                "Enter a valid phone number."
-
-            } else {
-
-                null
             }
 
         val passwordError =
             when {
 
                 state.password.isBlank() ->
-
                     "Password is required."
 
                 state.password.length <
                         MINIMUM_PASSWORD_LENGTH ->
-
                     "Password must contain at least 8 characters."
 
                 else ->
-
                     null
             }
 
@@ -370,29 +366,26 @@ class RegisterViewModel(
             when {
 
                 state.confirmPassword.isBlank() ->
-
                     "Confirm password is required."
 
                 state.confirmPassword !=
                         state.password ->
-
                     "Passwords do not match."
 
                 else ->
-
                     null
             }
 
         _uiState.update {
             it.copy(
-                fullNameError =
-                    fullNameError,
+                firstNameError =
+                    firstNameError,
+
+                lastNameError =
+                    lastNameError,
 
                 emailError =
                     emailError,
-
-                phoneNumberError =
-                    phoneNumberError,
 
                 passwordError =
                     passwordError,
@@ -400,18 +393,15 @@ class RegisterViewModel(
                 confirmPasswordError =
                     confirmPasswordError,
 
-                registrationResult =
-                    null,
-
                 registrationError =
                     null
             )
         }
 
         return listOf(
-            fullNameError,
+            firstNameError,
+            lastNameError,
             emailError,
-            phoneNumberError,
             passwordError,
             confirmPasswordError
         ).all {
@@ -428,17 +418,5 @@ class RegisterViewModel(
             Regex(
                 "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
             )
-
-        fun isAllowedPhoneCharacter(
-            character: Char
-        ): Boolean {
-
-            return character.isDigit() ||
-                    character == '+' ||
-                    character == '-' ||
-                    character == '(' ||
-                    character == ')' ||
-                    character.isWhitespace()
-        }
     }
 }

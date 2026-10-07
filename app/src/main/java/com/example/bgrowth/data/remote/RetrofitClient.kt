@@ -17,22 +17,45 @@ import java.util.concurrent.TimeUnit
 object RetrofitClient {
 
     /*
-     * مهم:
-     * ضعي هنا آخر URL يعطيك إياه Backend Developer.
+     * ضع هنا رابط الـBackend الحالي.
      *
-     * من Android Emulator إذا Backend على نفس الكمبيوتر:
+     * إذا كان Backend يعمل على نفس الكمبيوتر
+     * والتطبيق يعمل على Android Emulator:
+     *
      * http://10.0.2.2:8000/
      */
     private const val BASE_URL =
         "http://afterwards-payments-gotten-beef.trycloudflare.com/"
 
     /*
-     * هذا Client للطلبات العامة فقط.
+     * Logging لجميع HTTP requests/responses.
      *
-     * لا يرسل Authorization
-     * ولا يعمل refresh تلقائي.
+     * Authorization يتم إخفاؤه من Logcat.
      */
-    private val publicOkHttpClient: OkHttpClient by lazy {
+    private val loggingInterceptor:
+            HttpLoggingInterceptor by lazy {
+
+        HttpLoggingInterceptor().apply {
+
+            level =
+                HttpLoggingInterceptor.Level.BODY
+
+            redactHeader("Authorization")
+        }
+    }
+
+    /*
+     * Client للطلبات العامة:
+     *
+     * Login
+     * Register
+     * Token Refresh
+     * Password Reset
+     *
+     * لا يرسل Authorization header.
+     */
+    private val publicOkHttpClient:
+            OkHttpClient by lazy {
 
         OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
@@ -52,8 +75,7 @@ object RetrofitClient {
     }
 
     /*
-     * هذا Interceptor يضيف Access Token
-     * فقط للطلبات المحمية.
+     * يضيف Access Token للطلبات المحمية.
      */
     private val authInterceptor =
         Interceptor { chain ->
@@ -67,6 +89,7 @@ object RetrofitClient {
                 chain.request()
 
             if (accessToken.isNullOrBlank()) {
+
                 return@Interceptor chain.proceed(
                     originalRequest
                 )
@@ -87,12 +110,15 @@ object RetrofitClient {
         }
 
     /*
-     * إذا Backend رجع 401:
+     * إذا انتهى Access Token ورجع السيرفر 401:
      *
-     * 1. نأخذ refresh token
-     * 2. نطلب tokens جديدة
-     * 3. نحفظ access + refresh الجديدين
-     * 4. نعيد نفس request مرة واحدة
+     * 1. نستخدم Refresh Token.
+     * 2. نحصل على Access + Refresh جديدين.
+     * 3. نخزن الاثنين.
+     * 4. نعيد الطلب الأصلي.
+     *
+     * Backend يستخدم Refresh Token Rotation،
+     * لذلك يجب تخزين refresh الجديد أيضًا.
      */
     private val tokenAuthenticator =
         object : Authenticator {
@@ -103,9 +129,10 @@ object RetrofitClient {
             ): Request? {
 
                 /*
-                 * منع infinite loop.
+                 * منع infinite refresh loop.
                  */
                 if (responseCount(response) >= 2) {
+
                     BGrowthApp.instance
                         .sessionManager
                         .clearSession()
@@ -151,7 +178,9 @@ object RetrofitClient {
                         )
                         .build()
 
-                } catch (exception: Exception) {
+                } catch (
+                    exception: Exception
+                ) {
 
                     sessionManager.clearSession()
 
@@ -191,36 +220,15 @@ object RetrofitClient {
             .build()
     }
 
-    private val loggingInterceptor:
-            HttpLoggingInterceptor by lazy {
-
-        HttpLoggingInterceptor()
-            .apply {
-
-                level =
-                    HttpLoggingInterceptor
-                        .Level
-                        .BODY
-
-                redactHeader(
-                    "Authorization"
-                )
-            }
-    }
-
     /*
-     * Retrofit بدون Authentication.
+     * Retrofit للطلبات العامة.
      */
     private val publicRetrofit:
             Retrofit by lazy {
 
         Retrofit.Builder()
-            .baseUrl(
-                BASE_URL
-            )
-            .client(
-                publicOkHttpClient
-            )
+            .baseUrl(BASE_URL)
+            .client(publicOkHttpClient)
             .addConverterFactory(
                 GsonConverterFactory.create()
             )
@@ -228,15 +236,13 @@ object RetrofitClient {
     }
 
     /*
-     * Retrofit للطلبات التي تحتاج Bearer token.
+     * Retrofit للطلبات المحمية.
      */
     private val authenticatedRetrofit:
             Retrofit by lazy {
 
         Retrofit.Builder()
-            .baseUrl(
-                BASE_URL
-            )
+            .baseUrl(BASE_URL)
             .client(
                 authenticatedOkHttpClient
             )
@@ -247,6 +253,8 @@ object RetrofitClient {
     }
 
     /*
+     * Public Auth endpoints:
+     *
      * Login
      * Register
      * Refresh
@@ -261,9 +269,10 @@ object RetrofitClient {
     }
 
     /*
+     * Protected Auth endpoints:
+     *
      * /me/
-     * logout
-     * وأي Auth endpoint محمي.
+     * Logout
      */
     val authApi:
             AuthApi by lazy {
@@ -274,7 +283,22 @@ object RetrofitClient {
     }
 
     /*
-     * Products تحتاج Authentication.
+     * Business endpoints.
+     *
+     * تحتاج Authorization.
+     */
+    val businessApi:
+            BusinessApi by lazy {
+
+        authenticatedRetrofit.create(
+            BusinessApi::class.java
+        )
+    }
+
+    /*
+     * Product + Category endpoints.
+     *
+     * تحتاج Authorization.
      */
     val productApi:
             ProductApi by lazy {
@@ -284,6 +308,10 @@ object RetrofitClient {
         )
     }
 
+    /*
+     * يحسب عدد مرات إعادة نفس Response
+     * لمنع Authenticator من الدخول في loop.
+     */
     private fun responseCount(
         response: Response
     ): Int {
@@ -300,8 +328,7 @@ object RetrofitClient {
             result++
 
             previousResponse =
-                previousResponse
-                    .priorResponse
+                previousResponse.priorResponse
         }
 
         return result

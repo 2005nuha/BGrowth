@@ -1,30 +1,76 @@
 package com.example.bgrowth.data.navigation
 
-import android.net.Uri
-import com.example.bgrowth.ui.verification.VerificationMode
-
 object Routes {
-    const val SPLASH = "splash"
-    const val ONBOARDING = "onboarding"
-    const val REGISTER = "register"
-    const val VERIFICATION = "verification"
-    const val LOGIN = "login"
-    const val BUSINESS_SETUP = "business_setup"
-    const val DASHBOARD = "dashboard"
-    const val FORGOT_PASSWORD = "forgot_password"
-    const val RESET_PASSWORD = "reset_password"
-    const val ADD_PRODUCT = "add_product"
-    const val RECORD_SALE = "record_sale"
-    const val PRODUCTS = "products"
-    const val SALES_HISTORY = "sales_history"
 
-    const val VERIFICATION_MODE_ARGUMENT = "verificationMode"
-    const val VERIFICATION_TARGET_ARGUMENT = "verificationTarget"
-    const val VERIFICATION_ROUTE =
-        "$VERIFICATION/{$VERIFICATION_MODE_ARGUMENT}/{$VERIFICATION_TARGET_ARGUMENT}"
+    const val SPLASH =
+        "splash"
 
-    fun verification(
-        verificationTarget: String,
-        verificationMode: VerificationMode = VerificationMode.SIGN_UP
-    ): String = "$VERIFICATION/${verificationMode.name}/${Uri.encode(verificationTarget)}"
+    const val ONBOARDING =
+        "onboarding"
+
+    const val REGISTER =
+        "register"
+
+    const val LOGIN =
+        "login"
+
+    const val BUSINESS_SETUP =
+        "business_setup"
+
+    const val DASHBOARD =
+        "dashboard"
+
+    const val FORGOT_PASSWORD =
+        "forgot_password"
+
+    const val RESET_PASSWORD =
+        "reset_password"
+
+    // -------------------------
+    // Products
+    // -------------------------
+
+    const val ADD_PRODUCT =
+        "add_product"
+
+
+    const val PRODUCTS =
+        "products"
+
+    const val EDIT_PRODUCT =
+        "edit_product"
+
+    const val PRODUCT_ID_ARGUMENT =
+        "productId"
+
+    const val EDIT_PRODUCT_ROUTE =
+        "$EDIT_PRODUCT/{$PRODUCT_ID_ARGUMENT}"
+
+    fun editProduct(
+        productId: Int
+    ): String {
+
+        return "$EDIT_PRODUCT/$productId"
+    }
+    const val ADJUST_STOCK =
+        "adjust_stock"
+
+    const val ADJUST_STOCK_ROUTE =
+        "$ADJUST_STOCK/{$PRODUCT_ID_ARGUMENT}"
+
+    fun adjustStock(
+        productId: Int
+    ): String {
+        return "$ADJUST_STOCK/$productId"
+    }
+
+    // -------------------------
+    // Sales
+    // -------------------------
+
+    const val RECORD_SALE =
+        "record_sale"
+
+    const val SALES_HISTORY =
+        "sales_history"
 }

@@ -23,12 +23,12 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.bgrowth.ui.theme.BGrothTheme
 import java.util.Locale
+import androidx.compose.runtime.LaunchedEffect
 
 private val ProductsPrimary = Color(0xFF0F5D46)
 private val ProductsSurface = Color.White
@@ -67,15 +68,30 @@ fun ProductsScreen(
     onBackClick: () -> Unit,
     onAddProductClick: () -> Unit,
     onProductClick: (Int) -> Unit = {},
+    onAdjustStockClick: (Int) -> Unit = {},
+    refreshRequested: Boolean = false,
+    onRefreshConsumed: () -> Unit = {},
     viewModel: ProductsViewModel = viewModel()
 ) {
+
     val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(refreshRequested) {
+
+        if (refreshRequested) {
+
+            viewModel.loadProducts()
+
+            onRefreshConsumed()
+        }
+    }
 
     ProductsContent(
         uiState = uiState,
         onBackClick = onBackClick,
         onAddProductClick = onAddProductClick,
         onProductClick = onProductClick,
+        onAdjustStockClick = onAdjustStockClick,
         onSearchQueryChange = viewModel::onSearchQueryChange,
         onCategorySelected = viewModel::onCategorySelected,
         onOpenProductMenu = viewModel::openProductMenu,
@@ -92,6 +108,7 @@ private fun ProductsContent(
     onBackClick: () -> Unit,
     onAddProductClick: () -> Unit,
     onProductClick: (Int) -> Unit,
+    onAdjustStockClick: (Int) -> Unit,
     onSearchQueryChange: (String) -> Unit,
     onCategorySelected: (String?) -> Unit,
     onOpenProductMenu: (Int) -> Unit,
@@ -100,22 +117,26 @@ private fun ProductsContent(
     onCancelDeleteProduct: () -> Unit,
     onConfirmDeleteProduct: () -> Unit
 ) {
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(
+                MaterialTheme.colorScheme.background
+            )
     ) {
 
         ProductsHeader(
             onBackClick = onBackClick
         )
 
-        SearchAndFilterSection(
+        SearchSection(
             searchQuery = uiState.searchQuery,
             onSearchQueryChange = onSearchQueryChange
         )
 
         if (uiState.categories.isNotEmpty()) {
+
             CategoryChips(
                 categories = uiState.categories,
                 selectedCategory = uiState.selectedCategory,
@@ -127,21 +148,47 @@ private fun ProductsContent(
             modifier = Modifier.height(12.dp)
         )
 
-        if (uiState.filteredProducts.isEmpty()) {
-            EmptyProductsState(
-                hasSearchOrFilter =
-                    uiState.searchQuery.isNotBlank() ||
-                            uiState.selectedCategory != null
-            )
-        } else {
-            ProductsList(
-                products = uiState.filteredProducts,
-                openedMenuProductId = uiState.openedMenuProductId,
-                onProductClick = onProductClick,
-                onOpenProductMenu = onOpenProductMenu,
-                onCloseProductMenu = onCloseProductMenu,
-                onRequestDeleteProduct = onRequestDeleteProduct
-            )
+        when {
+
+            uiState.isLoading -> {
+                LoadingProductsState()
+            }
+
+            uiState.errorMessage != null -> {
+
+                Text(
+                    text = uiState.errorMessage,
+                    color = ProductsOutOfStock,
+                    modifier = Modifier.padding(
+                        horizontal = 16.dp,
+                        vertical = 8.dp
+                    )
+                )
+            }
+
+            uiState.filteredProducts.isEmpty() -> {
+
+                EmptyProductsState(
+                    hasSearchOrFilter =
+                        uiState.searchQuery.isNotBlank() ||
+                                uiState.selectedCategory != null
+                )
+            }
+
+            else -> {
+
+                ProductsList(
+                    products = uiState.filteredProducts,
+                    openedMenuProductId =
+                        uiState.openedMenuProductId,
+                    onProductClick = onProductClick,
+                    onAdjustStockClick = onAdjustStockClick,
+                    onOpenProductMenu = onOpenProductMenu,
+                    onCloseProductMenu = onCloseProductMenu,
+                    onRequestDeleteProduct =
+                        onRequestDeleteProduct
+                )
+            }
         }
 
         Spacer(
@@ -157,6 +204,7 @@ private fun ProductsContent(
 
         DeleteProductDialog(
             product = product,
+            isDeleting = uiState.isDeleting,
             onClose = onCancelDeleteProduct,
             onConfirmDelete = onConfirmDeleteProduct
         )
@@ -167,110 +215,76 @@ private fun ProductsContent(
 private fun ProductsHeader(
     onBackClick: () -> Unit
 ) {
-    Column(
+
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(
                 start = 8.dp,
                 end = 16.dp,
                 top = 12.dp
-            )
+            ),
+        verticalAlignment = Alignment.CenterVertically
     ) {
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically
+        IconButton(
+            onClick = onBackClick
         ) {
 
-            IconButton(
-                onClick = onBackClick
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = ProductsPrimary
-                )
-            }
+            Icon(
+                imageVector =
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Back",
+                tint = ProductsPrimary
+            )
+        }
 
-            Column {
+        Column {
 
-                Text(
-                    text = "Product",
-                    color = ProductsPrimary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp
-                )
+            Text(
+                text = "Products",
+                color = ProductsPrimary,
+                fontWeight = FontWeight.Bold,
+                fontSize = 22.sp
+            )
 
-                Text(
-                    text = "Manage your products and categories",
-                    color = ProductsSecondaryText,
-                    fontSize = 12.sp
-                )
-            }
+            Text(
+                text = "Manage your products and stock",
+                color = ProductsSecondaryText,
+                fontSize = 12.sp
+            )
         }
     }
 }
 
 @Composable
-private fun SearchAndFilterSection(
+private fun SearchSection(
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit
 ) {
 
-    Row(
+    OutlinedTextField(
+        value = searchQuery,
+        onValueChange = onSearchQueryChange,
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = onSearchQueryChange,
-            modifier = Modifier.weight(1f),
-            placeholder = {
-                Text("Search Products...")
-            },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = null
-                )
-            },
-            singleLine = true,
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = ProductsPrimary,
-                unfocusedBorderColor = ProductsBorder
+        placeholder = {
+            Text("Search Products...")
+        },
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = null
             )
+        },
+        singleLine = true,
+        shape = RoundedCornerShape(12.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = ProductsPrimary,
+            unfocusedBorderColor = ProductsBorder
         )
-
-        Surface(
-            modifier = Modifier
-                .size(52.dp)
-                .clickable {
-                    // TODO: Advanced filters later
-                },
-            shape = RoundedCornerShape(12.dp),
-            color = ProductsSurface,
-            border = BorderStroke(
-                1.dp,
-                ProductsBorder
-            )
-        ) {
-
-            Box(
-                contentAlignment = Alignment.Center
-            ) {
-
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = "Filters",
-                    tint = ProductsPrimary
-                )
-            }
-        }
-    }
+    )
 }
 
 @Composable
@@ -290,7 +304,8 @@ private fun CategoryChips(
             .horizontalScroll(
                 rememberScrollState()
             ),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement =
+            Arrangement.spacedBy(8.dp)
     ) {
 
         CategoryChip(
@@ -370,6 +385,7 @@ private fun ProductsList(
     products: List<ProductListItem>,
     openedMenuProductId: Int?,
     onProductClick: (Int) -> Unit,
+    onAdjustStockClick: (Int) -> Unit,
     onOpenProductMenu: (Int) -> Unit,
     onCloseProductMenu: () -> Unit,
     onRequestDeleteProduct: (ProductListItem) -> Unit
@@ -394,6 +410,10 @@ private fun ProductsList(
                     onProductClick(product.id)
                 },
 
+                onAdjustStockClick = {
+                    onAdjustStockClick(product.id)
+                },
+
                 onMenuClick = {
                     onOpenProductMenu(product.id)
                 },
@@ -414,6 +434,7 @@ private fun ProductCard(
     product: ProductListItem,
     menuExpanded: Boolean,
     onClick: () -> Unit,
+    onAdjustStockClick: () -> Unit,
     onMenuClick: () -> Unit,
     onDismissMenu: () -> Unit,
     onDeleteClick: () -> Unit
@@ -449,8 +470,20 @@ private fun ProductCard(
                     .background(
                         color = Color(0xFFE5E8E6),
                         shape = RoundedCornerShape(12.dp)
-                    )
-            )
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+
+                Text(
+                    text =
+                        product.name
+                            .firstOrNull()
+                            ?.uppercase()
+                            ?: "P",
+                    color = ProductsPrimary,
+                    fontWeight = FontWeight.Bold
+                )
+            }
 
             Spacer(
                 modifier = Modifier.width(10.dp)
@@ -473,7 +506,11 @@ private fun ProductCard(
                 )
 
                 Text(
-                    text = product.category,
+                    text =
+                        product.categoryName
+                            .ifBlank {
+                                "Uncategorized"
+                            },
                     color = ProductsMutedText,
                     fontSize = 11.sp,
                     maxLines = 1
@@ -510,16 +547,20 @@ private fun ProductCard(
                 IconButton(
                     onClick = onMenuClick
                 ) {
+
                     Icon(
-                        imageVector = Icons.Default.MoreVert,
-                        contentDescription = "Product menu",
+                        imageVector =
+                            Icons.Default.MoreVert,
+                        contentDescription =
+                            "Product menu",
                         tint = ProductsMutedText
                     )
                 }
 
                 DropdownMenu(
                     expanded = menuExpanded,
-                    onDismissRequest = onDismissMenu
+                    onDismissRequest =
+                        onDismissMenu
                 ) {
 
                     DropdownMenuItem(
@@ -528,9 +569,7 @@ private fun ProductCard(
                         },
                         onClick = {
                             onDismissMenu()
-
-                            // TODO:
-                            // Open Edit Product screen
+                            onClick()
                         }
                     )
 
@@ -540,33 +579,7 @@ private fun ProductCard(
                         },
                         onClick = {
                             onDismissMenu()
-
-                            // TODO:
-                            // Open Adjust Stock
-                        }
-                    )
-
-                    DropdownMenuItem(
-                        text = {
-                            Text("Duplicate")
-                        },
-                        onClick = {
-                            onDismissMenu()
-
-                            // TODO:
-                            // Duplicate product
-                        }
-                    )
-
-                    DropdownMenuItem(
-                        text = {
-                            Text("View Sales History")
-                        },
-                        onClick = {
-                            onDismissMenu()
-
-                            // TODO:
-                            // View product sales history
+                            onAdjustStockClick()
                         }
                     )
 
@@ -574,10 +587,14 @@ private fun ProductCard(
                         text = {
                             Text(
                                 text = "Delete Product",
-                                color = ProductsOutOfStock
+                                color =
+                                    ProductsOutOfStock
                             )
                         },
-                        onClick = onDeleteClick
+                        onClick = {
+                            onDismissMenu()
+                            onDeleteClick()
+                        }
                     )
                 }
             }
@@ -592,15 +609,6 @@ private fun StockStatusText(
 
     when {
 
-        !product.trackStock -> {
-
-            Text(
-                text = "Stock not tracked",
-                color = ProductsMutedText,
-                fontSize = 10.sp
-            )
-        }
-
         product.isOutOfStock -> {
 
             Text(
@@ -614,7 +622,8 @@ private fun StockStatusText(
         product.isLowStock -> {
 
             Text(
-                text = "Low stock",
+                text =
+                    "Low stock (${product.stockQuantity})",
                 color = ProductsLowStock,
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Medium
@@ -624,11 +633,28 @@ private fun StockStatusText(
         else -> {
 
             Text(
-                text = "${product.stockQuantity ?: 0} units",
+                text =
+                    "${product.stockQuantity} units",
                 color = ProductsSecondaryText,
                 fontSize = 10.sp
             )
         }
+    }
+}
+
+@Composable
+private fun LoadingProductsState() {
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 100.dp),
+        contentAlignment = Alignment.Center
+    ) {
+
+        CircularProgressIndicator(
+            color = ProductsPrimary
+        )
     }
 }
 
@@ -731,10 +757,13 @@ private fun AddProductBottomButton(
             ) {
 
                 Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add Product",
+                    imageVector =
+                        Icons.Default.Add,
+                    contentDescription =
+                        "Add Product",
                     tint = Color.White,
-                    modifier = Modifier.size(28.dp)
+                    modifier =
+                        Modifier.size(28.dp)
                 )
             }
         }
@@ -744,48 +773,68 @@ private fun AddProductBottomButton(
 @Composable
 private fun DeleteProductDialog(
     product: ProductListItem,
+    isDeleting: Boolean,
     onClose: () -> Unit,
     onConfirmDelete: () -> Unit
 ) {
 
     AlertDialog(
-        onDismissRequest = onClose,
-
+        onDismissRequest = {
+            if (!isDeleting) {
+                onClose()
+            }
+        },
         title = {
+
             Text(
                 text = product.name,
-                fontWeight = FontWeight.SemiBold
+                fontWeight =
+                    FontWeight.SemiBold
             )
         },
-
         text = {
+
             Text(
-                text = "Are you sure you want to delete this product?"
+                text =
+                    "Are you sure you want to delete this product?"
             )
         },
-
         dismissButton = {
 
             OutlinedButton(
-                onClick = onClose
+                onClick = onClose,
+                enabled = !isDeleting
             ) {
                 Text("Close")
             }
         },
-
         confirmButton = {
 
             Button(
                 onClick = onConfirmDelete,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor =
-                        ProductsOutOfStock
-                )
+                enabled = !isDeleting,
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor =
+                            ProductsOutOfStock
+                    )
             ) {
-                Text("Delete Product")
+
+                if (isDeleting) {
+
+                    CircularProgressIndicator(
+                        modifier =
+                            Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                        color = Color.White
+                    )
+
+                } else {
+
+                    Text("Delete Product")
+                }
             }
         },
-
         containerColor = ProductsSurface
     )
 }
@@ -796,7 +845,7 @@ private fun formatPrice(
 
     return String.format(
         Locale.US,
-        "$%.2f",
+        "%.2f",
         value
     )
 }
@@ -818,36 +867,27 @@ private fun ProductsPopulatedPreview() {
                     ProductListItem(
                         id = 1,
                         name = "Potato Chips",
-                        category = "Snacks",
+                        categoryId = 1,
+                        categoryName = "Snacks",
                         price = 1.80,
-                        trackStock = true,
                         stockQuantity = 24,
                         minStockLevel = 10
                     ),
                     ProductListItem(
                         id = 2,
-                        name = "Arabic Coffee",
-                        category = "Coffee & Tea",
-                        price = 25.00,
-                        trackStock = true,
-                        stockQuantity = 32,
-                        minStockLevel = 10
-                    ),
-                    ProductListItem(
-                        id = 3,
                         name = "Thermal Cup",
-                        category = "Cups & Mugs",
+                        categoryId = 2,
+                        categoryName = "Cups & Mugs",
                         price = 18.00,
-                        trackStock = true,
                         stockQuantity = 4,
                         minStockLevel = 5
                     ),
                     ProductListItem(
-                        id = 4,
+                        id = 3,
                         name = "Turkish Coffee",
-                        category = "Coffee & Tea",
+                        categoryId = 3,
+                        categoryName = "Coffee & Tea",
                         price = 21.00,
-                        trackStock = true,
                         stockQuantity = 0,
                         minStockLevel = 5
                     )
@@ -856,6 +896,7 @@ private fun ProductsPopulatedPreview() {
             onBackClick = {},
             onAddProductClick = {},
             onProductClick = {},
+            onAdjustStockClick = {},
             onSearchQueryChange = {},
             onCategorySelected = {},
             onOpenProductMenu = {},
@@ -883,6 +924,7 @@ private fun ProductsEmptyPreview() {
             onBackClick = {},
             onAddProductClick = {},
             onProductClick = {},
+            onAdjustStockClick = {},
             onSearchQueryChange = {},
             onCategorySelected = {},
             onOpenProductMenu = {},
