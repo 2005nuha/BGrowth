@@ -12,6 +12,8 @@ object RetrofitClient {
 
     private const val BASE_URL = "https://english-bras-worker-nick.trycloudflare.com/"
 
+
+
     private val authInterceptor = Interceptor { chain ->
         val token = BGrowthApp.instance.sessionManager.getToken()
         val request = if (token != null) {
@@ -44,5 +46,22 @@ object RetrofitClient {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(AuthApi::class.java)
+    }
+
+    val expenseApi: ExpenseApi by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(ExpenseApi::class.java)
+    }
+    val customerApi: CustomerApi by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(CustomerApi::class.java)
     }
 }

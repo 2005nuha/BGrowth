@@ -31,12 +31,19 @@ fun AddCustomerScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
+    // الرجوع تلقائياً للشاشة السابقة عند نجاح الحفظ
+    LaunchedEffect(uiState.isSuccess) {
+        if (uiState.isSuccess) {
+            onNavigateBack()
+        }
+    }
+
     AddCustomerContent(
         uiState = uiState,
         onFullNameChange = viewModel::onFullNameChange,
         onPhoneNumberChange = viewModel::onPhoneNumberChange,
         onNotesChange = viewModel::onNotesChange,
-        onSaveCustomer = viewModel::onSaveCustomer,
+        onSaveCustomer = { viewModel.onSaveCustomer(businessId = 1) },
         onNavigateBack = onNavigateBack
     )
 }
@@ -143,27 +150,36 @@ fun AddCustomerContent(
                         )
                     )
 
+                    uiState.errorMessage?.let { error ->
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(error, color = Color.Red, fontSize = 12.sp)
+                    }
+
                     Spacer(modifier = Modifier.height(24.dp))
 
                     // Save Button
                     Button(
                         onClick = onSaveCustomer,
+                        enabled = !uiState.isLoading,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(50.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = DarkGreen),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.White)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Save Customer", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                        if (uiState.isLoading) {
+                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                        } else {
+                            Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.White)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Save Customer", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                        }
                     }
                 }
             }
         }
     }
 }
-
 
 @Preview(showBackground = true, device = "id:pixel_5", name = "Add Customer Screen")
 @Composable

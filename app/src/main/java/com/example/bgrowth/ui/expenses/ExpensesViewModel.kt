@@ -1,12 +1,17 @@
 package com.example.bgrowth.ui.expenses
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.bgrowth.data.repository.ExpenseRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
-class ExpensesViewModel : ViewModel() {
+class ExpensesViewModel(
+    private val repository: ExpenseRepository = ExpenseRepository()
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ExpensesUiState())
     val uiState: StateFlow<ExpensesUiState> = _uiState.asStateFlow()
@@ -15,30 +20,47 @@ class ExpensesViewModel : ViewModel() {
         loadExpenses()
     }
 
-    private fun loadExpenses() {
-        val mockGroups = listOf(
-            ExpenseGroup(
-                dateHeader = "Today ,sep7",
-                totalAmount = "-$45.00",
-                items = listOf(
-                    ExpenseItem("Electricity Bill", "Utilities · Today, 9:15 AM", "-$45.00")
-                )
-            ),
-            ExpenseGroup(
-                dateHeader = "Yesterday ,sep6",
-                totalAmount = "-$120.00",
-                items = listOf(
-                    ExpenseItem("Packaging Supplies", "Supplies · Yesterday", "-$120.00"),
-                    ExpenseItem("Delivery Fuel", "Transport · Yesterday", "-$16.00")
-                )
-            )
-        )
+    fun loadExpenses() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
 
-        _uiState.update { state ->
-            state.copy(
-                expenseGroups = mockGroups,
-                isLoading = false
-            )
+            // استدعاء جلب البيانات من الـ Repository
+            val result = repository.getExpenses()
+
+            if (result.isSuccess) {
+                val rawExpenses = result.getOrDefault(emptyList())
+
+                // تحويل القائمة القادمة من الباك إند إلى ExpenseGroup لعرضها
+                val groupedExpenses = rawExpenses
+                    .groupBy { it.expense_date } // تجميع حسب التاريخ
+                    .map { (date, items) ->
+                        ExpenseGroup(
+                            dateHeader = date,
+                            totalAmount = "-$${items.sumOf { it.amount.toDoubleOrNull() ?: 0.0 }}",
+                            items = items.map { expense ->
+                                ExpenseItem(
+                                    title = expense.description ?: expense.category,
+                                    subtitle = "${expense.category} · ${expense.expense_date}",
+                                    amount = "-$${expense.amount}"
+                                )
+                            }
+                        )
+                    }
+
+                _uiState.update { state ->
+                    state.copy(
+                        expenseGroups = groupedExpenses,
+                        isLoading = false
+                    )
+                }
+            } else {
+                _uiState.update { state ->
+                    state.copy(
+                        isLoading = false
+                        // يمكنك إضافة حقل errorMessage في الـ UiState لإظهار الخطأ
+                    )
+                }
+            }
         }
     }
 

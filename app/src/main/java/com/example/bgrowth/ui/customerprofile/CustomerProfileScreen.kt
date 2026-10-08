@@ -67,136 +67,147 @@ fun CustomerProfileContent(
             }
         }
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 24.dp)        ) {
-            item {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    border = BorderStroke(1.dp, BorderLight),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+        if (uiState.isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = DarkGreen)
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 24.dp)
+            ) {
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        border = BorderStroke(1.dp, BorderLight),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        // صورة الأفاتار
-                        Box(
+                        Column(
                             modifier = Modifier
-                                .size(64.dp)
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(Color(0xFFE8E8E8)),
-                            contentAlignment = Alignment.Center
+                                .fillMaxWidth()
+                                .padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text(uiState.initials, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.Black)
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Text(uiState.name, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Black)
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(uiState.phone, fontSize = 14.sp, color = GrayText)
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Button(
-                                onClick = { /* Call logic */ },
-                                modifier = Modifier.weight(1f).height(48.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEAF5EF)),
-                                shape = RoundedCornerShape(8.dp),
-                                border = BorderStroke(1.dp, Color(0xFF75A490))
-                            ) {
-                                Icon(Icons.Default.Phone, contentDescription = "Call", tint = Color(0xFF4CAF50), modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Call", color = Color(0xFF4CAF50), fontWeight = FontWeight.Medium)
-                            }
-
-                            Button(
-                                onClick = { /* Add debt logic */ },
-                                modifier = Modifier.weight(1f).height(48.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFDEBEA)),
-                                shape = RoundedCornerShape(8.dp),
-                                border = BorderStroke(1.dp, Color(0xFFF5C6C5))
-                            ) {
-                                Icon(Icons.Default.Add, contentDescription = "Add Debt", tint = RedText, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Add Debt", color = RedText, fontWeight = FontWeight.Medium)
-                            }
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFDEBEA)),
-                    border = BorderStroke(1.dp, Color(0xFFF5C6C5)),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text("Outstanding Balance", color = RedText, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text("Across ${uiState.unpaidDebtsCount} unpaid debts", color = Color(0xFFD32F2F).copy(alpha = 0.7f), fontSize = 12.sp)
-                        }
-                        Text(uiState.outstandingBalance, color = RedText, fontWeight = FontWeight.Bold, fontSize = 22.sp)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Surface(
-                    shape = RoundedCornerShape(24.dp),
-                    color = Color(0xFFEEEEEE),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(45.dp)
-                ) {
-                    Row(modifier = Modifier.fillMaxSize().padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        uiState.tabs.forEach { tab ->
-                            val isSelected = tab == uiState.selectedTab
                             Box(
                                 modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxHeight()
-                                    .clip(RoundedCornerShape(20.dp))
-                                    .background(if (isSelected) DarkGreen else Color.Transparent)
-                                    .clickable { onTabSelected(tab) },
+                                    .size(64.dp)
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(Color(0xFFE8E8E8)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(
-                                    text = tab,
-                                    color = if (isSelected) Color.White else Color.Black,
-                                    fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal,
-                                    fontSize = 13.sp
-                                )
+                                Text(uiState.initials, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.Black)
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Text(uiState.name, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Black)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(uiState.phone, fontSize = 14.sp, color = GrayText)
+
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Button(
+                                    onClick = { /* Call logic */ },
+                                    modifier = Modifier.weight(1f).height(48.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEAF5EF)),
+                                    shape = RoundedCornerShape(8.dp),
+                                    border = BorderStroke(1.dp, Color(0xFF75A490))
+                                ) {
+                                    Icon(Icons.Default.Phone, contentDescription = "Call", tint = Color(0xFF4CAF50), modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Call", color = Color(0xFF4CAF50), fontWeight = FontWeight.Medium)
+                                }
+
+                                Button(
+                                    onClick = { /* Add debt logic */ },
+                                    modifier = Modifier.weight(1f).height(48.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFDEBEA)),
+                                    shape = RoundedCornerShape(8.dp),
+                                    border = BorderStroke(1.dp, Color(0xFFF5C6C5))
+                                ) {
+                                    Icon(Icons.Default.Add, contentDescription = "Add Debt", tint = RedText, modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Add Debt", color = RedText, fontWeight = FontWeight.Medium)
+                                }
                             }
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFDEBEA)),
+                        border = BorderStroke(1.dp, Color(0xFFF5C6C5)),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text("Outstanding Balance", color = RedText, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text("Across ${uiState.unpaidDebtsCount} unpaid debts", color = Color(0xFFD32F2F).copy(alpha = 0.7f), fontSize = 12.sp)
+                            }
+                            Text(uiState.outstandingBalance, color = RedText, fontWeight = FontWeight.Bold, fontSize = 22.sp)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Surface(
+                        shape = RoundedCornerShape(24.dp),
+                        color = Color(0xFFEEEEEE),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(45.dp)
+                    ) {
+                        Row(modifier = Modifier.fillMaxSize().padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                            uiState.tabs.forEach { tab ->
+                                val isSelected = tab == uiState.selectedTab
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight()
+                                        .clip(RoundedCornerShape(20.dp))
+                                        .background(if (isSelected) DarkGreen else Color.Transparent)
+                                        .clickable { onTabSelected(tab) },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = tab,
+                                        color = if (isSelected) Color.White else Color.Black,
+                                        fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal,
+                                        fontSize = 13.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
-            items(uiState.purchases) { purchase ->
-                PurchaseItemCard(purchase = purchase)
-                Spacer(modifier = Modifier.height(12.dp))
+                items(uiState.purchases) { purchase ->
+                    PurchaseItemCard(purchase = purchase)
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
             }
         }
     }
@@ -236,11 +247,13 @@ fun PurchaseItemCard(purchase: PurchaseItem) {
     }
 }
 
-
 @Preview(showBackground = true, device = "id:pixel_5", name = "Customer Profile Screen")
 @Composable
 fun CustomerProfileScreenPreview() {
     val mockUiState = CustomerProfileUiState(
+        initials = "SA",
+        name = "Sara Ahmed",
+        phone = "059 123 4567",
         purchases = listOf(
             PurchaseItem(1, "Thermal cup", "Cups & Mugs", "$90.00"),
             PurchaseItem(2, "Potato Chips", "Snacks", "$25.00")
