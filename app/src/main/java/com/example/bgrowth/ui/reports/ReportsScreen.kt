@@ -97,7 +97,7 @@ fun ReportsContent(
             contentPadding = PaddingValues(bottom = 24.dp)
         ) {
             item {
-                // البطاقة الأولى
+                // Card 1: Header
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -130,7 +130,7 @@ fun ReportsContent(
                     }
                 }
 
-                // البطاقة الثانية (قائمة الأرقام)
+                // Card 2: Metrics List
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -138,23 +138,23 @@ fun ReportsContent(
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Column(modifier = Modifier.padding(20.dp)) {
-                        MetricRow(C_Sales, "Total Sales", "$3,240.00", Color.Black)
+                        MetricRow(C_Sales, "Total Sales", uiState.totalSales, Color.Black)
                         HorizontalDivider(color = BorderLight, modifier = Modifier.padding(vertical = 12.dp))
 
-                        MetricRow(C_Expenses, "Total Expenses", "$1,390.00", Color.Black)
+                        MetricRow(C_Expenses, "Total Expenses", uiState.totalExpenses, Color.Black)
                         HorizontalDivider(color = BorderLight, modifier = Modifier.padding(vertical = 12.dp))
 
-                        MetricRow(C_NetProfit, "Net Profit", "$1,850.00", DarkGreen)
+                        MetricRow(C_NetProfit, "Net Profit", uiState.netProfit, DarkGreen)
                         HorizontalDivider(color = BorderLight, modifier = Modifier.padding(vertical = 12.dp))
 
-                        MetricRow(C_OwedToMe, "Outstanding — Owed to Me", "$285.00", DarkGreen)
+                        MetricRow(C_OwedToMe, "Outstanding — Owed to Me", uiState.owedToMe, DarkGreen)
                         HorizontalDivider(color = BorderLight, modifier = Modifier.padding(vertical = 12.dp))
 
-                        MetricRow(C_IOwe, "Outstanding — I Owe", "$150.00", C_IOwe)
+                        MetricRow(C_IOwe, "Outstanding — I Owe", uiState.iOwe, C_IOwe)
                     }
                 }
 
-                // البطاقة الثالثة (تتغير بناءً على الاختيار)
+                // Card 3: Charts
                 if (uiState.selectedPeriod == ReportPeriod.THIS_YEAR) {
                     DonutChartCard()
                 } else {
@@ -174,7 +174,7 @@ fun ReportsContent(
         }
     }
 
-    // القائمة السفلية (Bottom Sheet)
+    // Modal Bottom Sheet
     if (uiState.showPeriodSelector) {
         ModalBottomSheet(
             onDismissRequest = { onPeriodSelectorClick(false) },
@@ -236,7 +236,7 @@ fun ReportsContent(
     }
 }
 
-// ======================== المكونات المساعدة ======================== //
+// ======================== Helper Components ======================== //
 
 @Composable
 fun MetricRow(iconColor: Color, title: String, amount: String, amountColor: Color) {

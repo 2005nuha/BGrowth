@@ -34,14 +34,18 @@ val OrangeText = Color(0xFFF57C00)
 @Composable
 fun DebtsScreen(
     viewModel: DebtsViewModel = viewModel(),
-    onNavigateBack: () -> Unit = {}
+    onNavigateBack: () -> Unit = {},
+    onAddDebtClick: () -> Unit = {},
+    onDebtClick: (Int) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     DebtsContent(
         uiState = uiState,
         onTabSelected = viewModel::onTabSelected,
-        onNavigateBack = onNavigateBack
+        onNavigateBack = onNavigateBack,
+        onAddDebtClick = onAddDebtClick,
+        onDebtClick = onDebtClick
     )
 }
 
@@ -50,13 +54,15 @@ fun DebtsScreen(
 fun DebtsContent(
     uiState: DebtsUiState,
     onTabSelected: (String) -> Unit,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onAddDebtClick: () -> Unit,
+    onDebtClick: (Int) -> Unit
 ) {
     Scaffold(
         containerColor = BackgroundColor,
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { /* التنقل لشاشة الإضافة */ },
+                onClick = onAddDebtClick,
                 containerColor = DarkGreen,
                 shape = CircleShape
             ) {
@@ -69,7 +75,7 @@ fun DebtsContent(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // الشريط العلوي (Header)
+            // Header
             Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 24.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = onNavigateBack, modifier = Modifier.size(24.dp)) {
@@ -87,7 +93,7 @@ fun DebtsContent(
                 )
             }
 
-            // تبويبات الأقسام (Tabs)
+            // Tabs
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -118,7 +124,7 @@ fun DebtsContent(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // كروت الملخص (Summary Cards)
+            // Summary Cards
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -141,7 +147,7 @@ fun DebtsContent(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // قائمة الديون أو حالة "فارغ"
+            // Debt List / Empty View
             if (uiState.isEmpty) {
                 EmptyDebtsView(selectedTab = uiState.selectedTab)
             } else {
@@ -150,7 +156,10 @@ fun DebtsContent(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(uiState.debtsList) { debt ->
-                        DebtItemCard(debt = debt)
+                        DebtItemCard(
+                            debt = debt,
+                            onClick = { onDebtClick(debt.id) }
+                        )
                     }
                 }
             }
@@ -167,7 +176,6 @@ fun SummaryCard(title: String, amount: String, borderColor: Color, modifier: Mod
         modifier = modifier
     ) {
         Row(modifier = Modifier.height(IntrinsicSize.Min)) {
-            // الخط الجانبي الملون
             Box(
                 modifier = Modifier
                     .width(6.dp)
@@ -186,12 +194,14 @@ fun SummaryCard(title: String, amount: String, borderColor: Color, modifier: Mod
 }
 
 @Composable
-fun DebtItemCard(debt: DebtItem) {
+fun DebtItemCard(debt: DebtItem, onClick: () -> Unit) {
     Card(
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(12.dp),
         border = BorderStroke(1.dp, BorderLight),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
     ) {
         Row(
             modifier = Modifier
@@ -199,7 +209,6 @@ fun DebtItemCard(debt: DebtItem) {
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // الأيقونة الرمادية
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -212,14 +221,12 @@ fun DebtItemCard(debt: DebtItem) {
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // الاسم والتاريخ
             Column(modifier = Modifier.weight(1f)) {
                 Text(debt.name, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.Black)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(debt.dueDate, fontSize = 12.sp, color = GrayText)
             }
 
-            // المبلغ والحالة (Label)
             Column(horizontalAlignment = Alignment.End) {
                 Text(
                     text = debt.amount,
@@ -288,7 +295,7 @@ fun DebtsOwedToMePreview() {
             DebtItem(3, "RN", "Rana Nasser", "No due date", "$120.00", false, "Partially Paid")
         )
     )
-    MaterialTheme { DebtsContent(uiState = mockUiState, onTabSelected = {}, onNavigateBack = {}) }
+    MaterialTheme { DebtsContent(uiState = mockUiState, onTabSelected = {}, onNavigateBack = {}, onAddDebtClick = {}, onDebtClick = {}) }
 }
 
 @Preview(showBackground = true, device = "id:pixel_5", name = "2. Debts (I Owe)")
@@ -300,7 +307,7 @@ fun DebtsIOwePreview() {
             DebtItem(4, "JS", "John Supplier", "Due Oct 1", "$150.00", true, "Unpaid")
         )
     )
-    MaterialTheme { DebtsContent(uiState = mockUiState, onTabSelected = {}, onNavigateBack = {}) }
+    MaterialTheme { DebtsContent(uiState = mockUiState, onTabSelected = {}, onNavigateBack = {}, onAddDebtClick = {}, onDebtClick = {}) }
 }
 
 @Preview(showBackground = true, device = "id:pixel_5", name = "3. Debts (Empty State)")
@@ -312,5 +319,5 @@ fun DebtsEmptyPreview() {
         totalIOwe = "$0.00",
         isEmpty = true
     )
-    MaterialTheme { DebtsContent(uiState = mockUiState, onTabSelected = {}, onNavigateBack = {}) }
+    MaterialTheme { DebtsContent(uiState = mockUiState, onTabSelected = {}, onNavigateBack = {}, onAddDebtClick = {}, onDebtClick = {}) }
 }

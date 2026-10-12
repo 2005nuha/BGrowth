@@ -15,9 +15,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.bgrowth.data.repository.AuthRepository
+import com.example.bgrowth.ui.adddebt.AddDebtScreen
 import com.example.bgrowth.ui.businesssetup.BusinessSetupScreen
 import com.example.bgrowth.ui.dashboard.DashboardRoute
+import com.example.bgrowth.ui.debtdetail.DebtDetailScreen
+import com.example.bgrowth.ui.debts.DebtsScreen
 import com.example.bgrowth.ui.forgotpassword.ForgotPasswordScreen
+import com.example.bgrowth.ui.invoicedetail.InvoiceDetailScreen
+import com.example.bgrowth.ui.invoices.InvoicesScreen
 import com.example.bgrowth.ui.login.LoginScreen
 import com.example.bgrowth.ui.login.LoginViewModel
 import com.example.bgrowth.ui.onboarding.OnboardingPagerScreen
@@ -25,6 +30,7 @@ import com.example.bgrowth.ui.product.AddProductScreen
 import com.example.bgrowth.ui.product.ProductsScreen
 import com.example.bgrowth.ui.register.RegisterScreen
 import com.example.bgrowth.ui.register.RegisterViewModel
+import com.example.bgrowth.ui.reports.ReportsScreen
 import com.example.bgrowth.ui.resetpassword.ResetPasswordScreen
 import com.example.bgrowth.ui.sales.RecordSaleScreen
 import com.example.bgrowth.ui.sales.SalesHistoryScreen
@@ -459,12 +465,7 @@ fun AppNavGraph(
                     }
                 },
 
-                onProductClick = { productId ->
-
-                    // TODO:
-                    // Edit Product / Product Details later
-                    // using productId.
-                }
+                onProductClick = { _ -> }
             )
         }
 
@@ -534,50 +535,102 @@ fun AppNavGraph(
                     }
                 },
 
-                onSaleClick = { saleId ->
+                onSaleClick = { _ -> }
+            )
+        }
+// --------------------------------------------------
+        // Sprint 4: Debts Module
+        // --------------------------------------------------
 
-                    // TODO:
-                    // Edit Sale / Sale Details later
-                    // using saleId.
+        composable(Routes.DEBTS) {
+            DebtsScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onAddDebtClick = {
+                    navController.navigate(Routes.ADD_DEBT) {
+                        launchSingleTop = true
+                    }
+                },
+                onDebtClick = { debtId ->
+                    navController.navigate(Routes.debtDetail(debtId)) {
+                        launchSingleTop = true
+                    }
                 }
+            )
+        }
+
+        composable(Routes.ADD_DEBT) {
+            AddDebtScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Routes.DEBT_DETAIL,
+            arguments = listOf(
+                navArgument(Routes.DEBT_DETAIL_ARGUMENT) {
+                    type = NavType.IntType
+                }
+            )
+        ) {
+            DebtDetailScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // --------------------------------------------------
+        // Sprint 4: Invoices Module
+        // --------------------------------------------------
+
+        composable(Routes.INVOICES) {
+            InvoicesScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onAddInvoiceClick = { },
+                onInvoiceClick = { invoiceId ->
+                    navController.navigate(Routes.invoiceDetail(invoiceId)) {
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
+
+        composable(
+            route = Routes.INVOICE_DETAIL,
+            arguments = listOf(
+                navArgument(Routes.INVOICE_DETAIL_ARGUMENT) {
+                    type = NavType.StringType
+                }
+            )
+        ) {
+            InvoiceDetailScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // --------------------------------------------------
+        // Sprint 4: Reports Module
+        // --------------------------------------------------
+
+        composable(Routes.REPORTS) {
+            ReportsScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }
 }
 
-
 // --------------------------------------------------
 // Verification ViewModel Factory
 // --------------------------------------------------
 
-private fun verificationViewModelFactory():
-        ViewModelProvider.Factory =
-
+private fun verificationViewModelFactory(): ViewModelProvider.Factory =
     object : ViewModelProvider.Factory {
-
         @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(
-            modelClass: Class<T>
-        ): T {
-
-            if (
-                !modelClass.isAssignableFrom(
-                    VerificationViewModel::class.java
-                )
-            ) {
-                throw IllegalArgumentException(
-                    "Unknown ViewModel class: ${modelClass.name}"
-                )
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (!modelClass.isAssignableFrom(VerificationViewModel::class.java)) {
+                throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
             }
-
             return VerificationViewModel() as T
         }
     }
 
-
-// --------------------------------------------------
-// Splash duration
-// --------------------------------------------------
-
-private const val SPLASH_DURATION_MILLIS =
-    1_750L
+private const val SPLASH_DURATION_MILLIS = 1_750L

@@ -1,7 +1,6 @@
 package com.example.bgrowth.ui.debtdetail
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -18,9 +17,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -71,7 +67,7 @@ fun DebtDetailContent(
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = DarkGreen)
                 }
                 Spacer(modifier = Modifier.width(16.dp))
-                Text("Debt Detail", color = DarkGreen, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                Text("Debt Details", color = DarkGreen, fontWeight = FontWeight.Bold, fontSize = 20.sp)
             }
         }
     ) { paddingValues ->
@@ -83,159 +79,105 @@ fun DebtDetailContent(
             contentPadding = PaddingValues(bottom = 24.dp)
         ) {
             item {
+                // Main Info Card
                 Card(
+                    modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     border = BorderStroke(1.dp, BorderLight),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth()
+                    shape = RoundedCornerShape(12.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp)
-                    ) {
-                        // تحديد لون الحالة برمجياً
-                        val statusColor = when (uiState.statusText) {
-                            "Unpaid" -> RedText
-                            "Paid" -> DarkGreen
-                            else -> OrangeText
-                        }
-
-                        // الاسم والحالة
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = uiState.partyName,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp,
-                                color = Color.Black
-                            )
-                            Text(
-                                text = uiState.statusText,
-                                color = statusColor,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = uiState.debtTypeAndDate,
-                            color = GrayText,
-                            fontSize = 13.sp
-                        )
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        Text(
-                            text = uiState.totalAmount,
-                            color = RedText,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 24.sp,
-                            modifier = Modifier.align(Alignment.CenterHorizontally)
-                        )
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        // شريط التقدم المرسوم بدقة متناهية (Pixel-Perfect Canvas)
-                        // شريط التقدم المتصل (Continuous Progress Bar) بدون أي فراغات
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(12.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFEEEEEE)) // الخلفية الرمادية المتصلة بالكامل
-                        ) {
-                            // الجزء الأخضر يمتد فوق الرمادي بنعومة
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(
                                 modifier = Modifier
-                                    .fillMaxWidth(uiState.progress)
-                                    .fillMaxHeight()
-                                    .clip(CircleShape)
-                                    .background(DarkGreen)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(uiState.paidAmountText, color = GrayText, fontSize = 12.sp)
-                            Text(uiState.remainingAmountText, color = GrayText, fontSize = 12.sp)
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color(0xFFE8E8E8)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(uiState.initials, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(uiState.partyName, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(uiState.debtTypeAndDate, fontSize = 12.sp, color = GrayText)
+                            }
+                            val statusBg = if (uiState.isUnpaid) Color(0xFFFDEBEA) else Color(0xFFFFF3E0)
+                            val statusColor = if (uiState.isUnpaid) RedText else OrangeText
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(statusBg)
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Text(uiState.statusText, color = statusColor, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
                         }
 
                         Spacer(modifier = Modifier.height(20.dp))
 
-                        // مربع التنبيه الأصفر (يظهر فقط إذا كان هناك رسالة تحذير)
-                        if (uiState.dueWarningMessage.isNotEmpty()) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(WarningBg)
-                                    .border(1.dp, WarningBorder, RoundedCornerShape(8.dp))
-                                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Notifications,
-                                    contentDescription = "Warning",
-                                    tint = OrangeText,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = uiState.dueWarningMessage,
-                                    color = OrangeText,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
+                        // Progress Section
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text("Paid Amount", fontSize = 12.sp, color = GrayText)
+                                Text(uiState.paidAmountText, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = DarkGreen)
+                            }
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text("Remaining Amount", fontSize = 12.sp, color = GrayText)
+                                Text(uiState.remainingAmountText, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = RedText)
                             }
                         }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        LinearProgressIndicator(
+                            progress = { uiState.progress },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(8.dp)
+                                .clip(RoundedCornerShape(4.dp)),
+                            color = DarkGreen,
+                            trackColor = Color(0xFFE0E0E0)
+                        )
+
+
                     }
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
-
-                Text(
-                    text = "Payment History",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = Color.Black
-                )
                 Spacer(modifier = Modifier.height(16.dp))
-            }
 
-            // قائمة الدفعات
-            items(uiState.paymentHistory) { historyItem ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = historyItem.dateAndMethod,
-                        color = GrayText,
-                        fontSize = 14.sp
-                    )
-                    Text(
-                        text = historyItem.amount,
-                        color = DarkGreen,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
-                    )
+                // Warning Message Box (Safe Null Check Fix)
+                if (!uiState.dueWarningMessage.isNullOrEmpty()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(WarningBg)
+                            .border(1.dp, WarningBorder, RoundedCornerShape(8.dp))
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Outlined.Notifications,
+                            contentDescription = "Warning",
+                            tint = OrangeText,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = uiState.dueWarningMessage ?: "",
+                            color = OrangeText,
+                            fontSize = 12.sp
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
-                HorizontalDivider(color = BorderLight, modifier = Modifier.padding(top = 8.dp))
-            }
 
-            item {
-                Spacer(modifier = Modifier.height(32.dp))
-
+                // Record Payment Button
                 Button(
                     onClick = onRecordPayment,
                     modifier = Modifier
@@ -244,69 +186,78 @@ fun DebtDetailContent(
                     colors = ButtonDefaults.buttonColors(containerColor = DarkGreen),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.White)
+                    Icon(Icons.Default.Add, contentDescription = null, tint = Color.White)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Record Payment", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text("Payment History", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
+            items(uiState.paymentHistory) { item ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    border = BorderStroke(1.dp, BorderLight),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(item.dateAndMethod, fontSize = 13.sp, color = Color.Black)
+                        Text(item.amount, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = DarkGreen)
+                    }
                 }
             }
         }
     }
 }
 
-// ============================== Previews ============================== //
+// ============================== Previews (Top-Level) ============================== //
 
-@Preview(showBackground = true, device = "id:pixel_5", name = "1. Partially Paid (Default)")
+@Preview(showBackground = true, device = "id:pixel_5", name = "1. Partially Paid Debt")
 @Composable
 fun DebtDetailPartiallyPaidPreview() {
     val mockUiState = DebtDetailUiState(
-        partyName = "Rana Nasser",
-        debtTypeAndDate = "Owed to Me · Due Sep 15",
+        partyName = "Sara Ahmed",
+        initials = "SA",
+        debtTypeAndDate = "Customer Debt • Due Sep 20",
+        totalAmount = "$150.00",
+        paidAmountText = "$45.00",
+        remainingAmountText = "$105.00",
+        progress = 0.3f,
         statusText = "Partially Paid",
-        totalAmount = "$120.00",
-        paidAmountText = "$48.00 paid",
-        remainingAmountText = "$72.00 remaining",
-        progress = 0.4f,
-        dueWarningMessage = "Due in 3 days",
+        isUnpaid = false,
+        dueWarningMessage = "Payment is overdue by 3 days",
         paymentHistory = listOf(
-            PaymentHistoryItem(1, "Sep 8 — Cash", "+$48.00")
+            PaymentHistoryItem(1, "Sep 10 • Cash", "$45.00")
         )
     )
     MaterialTheme { DebtDetailContent(uiState = mockUiState, onRecordPayment = {}, onNavigateBack = {}) }
 }
 
-@Preview(showBackground = true, device = "id:pixel_5", name = "2. Unpaid (Empty History)")
+@Preview(showBackground = true, device = "id:pixel_5", name = "2. Unpaid Debt")
 @Composable
 fun DebtDetailUnpaidPreview() {
     val mockUiState = DebtDetailUiState(
         partyName = "Mohammed Khalil",
-        debtTypeAndDate = "I Owe · Due Sep 20",
+        initials = "MK",
+        debtTypeAndDate = "Customer Debt • Due Sep 15",
+        totalAmount = "$120.00",
+        paidAmountText = "$0.00",
+        remainingAmountText = "$120.00",
+        progress = 0f,
         statusText = "Unpaid",
-        totalAmount = "$150.00",
-        paidAmountText = "$0.00 paid",
-        remainingAmountText = "$150.00 remaining",
-        progress = 0.0f,
-        dueWarningMessage = "",
-        paymentHistory = emptyList()
-    )
-    MaterialTheme { DebtDetailContent(uiState = mockUiState, onRecordPayment = {}, onNavigateBack = {}) }
-}
-
-@Preview(showBackground = true, device = "id:pixel_5", name = "3. Fully Paid")
-@Composable
-fun DebtDetailPaidPreview() {
-    val mockUiState = DebtDetailUiState(
-        partyName = "Sara Ahmed",
-        debtTypeAndDate = "Owed to Me · Completed",
-        statusText = "Paid",
-        totalAmount = "$200.00",
-        paidAmountText = "$200.00 paid",
-        remainingAmountText = "$0.00 remaining",
-        progress = 1.0f,
-        dueWarningMessage = "",
-        paymentHistory = listOf(
-            PaymentHistoryItem(1, "Sep 1 — Bank Transfer", "+$100.00"),
-            PaymentHistoryItem(2, "Sep 10 — Cash", "+$100.00")
-        )
+        isUnpaid = true
     )
     MaterialTheme { DebtDetailContent(uiState = mockUiState, onRecordPayment = {}, onNavigateBack = {}) }
 }
