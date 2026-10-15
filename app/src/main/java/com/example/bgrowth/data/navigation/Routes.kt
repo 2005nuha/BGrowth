@@ -17,19 +17,36 @@ object Routes {
     const val PRODUCTS = "products"
     const val SALES_HISTORY = "sales_history"
 
-    // --------------------------------------------------
-    // Sprint 4 Routes
-    // --------------------------------------------------
+
+
+
+
+
+    // Sprint 3
+    const val EXPENSES = "expenses"
+    const val CUSTOMERS = "customers"
+
+    // Sprint 4
     const val DEBTS = "debts"
     const val ADD_DEBT = "add_debt"
     const val DEBT_DETAIL_ARGUMENT = "debtId"
     const val DEBT_DETAIL = "debt_detail/{$DEBT_DETAIL_ARGUMENT}"
 
+    fun debtDetail(debtId: Int): String = "debt_detail/$debtId"
+
     const val INVOICES = "invoices"
     const val INVOICE_DETAIL_ARGUMENT = "invoiceId"
     const val INVOICE_DETAIL = "invoice_detail/{$INVOICE_DETAIL_ARGUMENT}"
 
+    fun invoiceDetail(invoiceId: Int): String = "invoice_detail/$invoiceId"
+
     const val REPORTS = "reports"
+    const val PROFIT_LOSS = "profit_loss"
+
+
+
+
+
 
     const val VERIFICATION_MODE_ARGUMENT = "verificationMode"
     const val VERIFICATION_TARGET_ARGUMENT = "verificationTarget"
@@ -40,9 +57,5 @@ object Routes {
         verificationTarget: String,
         verificationMode: VerificationMode = VerificationMode.SIGN_UP
     ): String = "$VERIFICATION/${verificationMode.name}/${Uri.encode(verificationTarget)}"
-
-    fun debtDetail(debtId: Int): String = "debt_detail/$debtId"
-    fun invoiceDetail(invoiceId: String): String = "invoice_detail/$invoiceId"
-
 
 }

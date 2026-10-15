@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
     private const val BASE_URL = "https://pichunter-commander-biol-gadgets.trycloudflare.com/"
+
     private val authInterceptor = Interceptor { chain ->
         val token = BGrowthApp.instance.sessionManager.getToken()
         val request = if (token != null) {
@@ -21,6 +22,7 @@ object RetrofitClient {
         }
         chain.proceed(request)
     }
+
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
         redactHeader("Authorization")
@@ -33,40 +35,22 @@ object RetrofitClient {
         .readTimeout(30, TimeUnit.SECONDS)
         .writeTimeout(30, TimeUnit.SECONDS)
         .build()
-    val authApi: AuthApi by lazy {
+
+    private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-            .create(AuthApi::class.java)
     }
 
+    val authApi: AuthApi by lazy { retrofit.create(AuthApi::class.java) }
+    val customerApi: CustomerApi by lazy { retrofit.create(CustomerApi::class.java) }
+    val debtApi: DebtApi by lazy { retrofit.create(DebtApi::class.java) }
+    val invoiceApi: InvoiceApi by lazy { retrofit.create(InvoiceApi::class.java) }
+    val reportApi: ReportApi by lazy { retrofit.create(ReportApi::class.java) }
 
-    val debtApi: DebtApi by lazy {
-        Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-            .create(DebtApi::class.java)
-    }
+    val expenseApi: ExpenseApi by lazy { retrofit.create(ExpenseApi::class.java) }
 
-    val invoiceApi: InvoiceApi by lazy {
-        Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-            .create(InvoiceApi::class.java)
-    }
 
-    val reportApi: ReportApi by lazy {
-        Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-            .create(ReportApi::class.java)
-    }
 }

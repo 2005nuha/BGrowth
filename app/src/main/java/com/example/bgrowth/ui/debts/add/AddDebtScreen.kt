@@ -1,4 +1,4 @@
-package com.example.bgrowth.ui.adddebt
+package com.example.bgrowth.ui.debts.add
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background

@@ -1,4 +1,4 @@
-package com.example.bgrowth.ui.selectcustomer
+package com.example.bgrowth.ui.customers.select
 
 data class CustomerSelectionItem(
     val id: String,

@@ -1,4 +1,4 @@
-package com.example.bgrowth.ui.invoicedetail
+package com.example.bgrowth.ui.invoices.detail
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -27,6 +27,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.bgrowth.ui.invoices.InvoiceStatus
 
 val DarkGreen = Color(0xFF105942)
 val BackgroundColor = Color(0xFFF9F9F9)
@@ -36,14 +37,19 @@ val OrangeText = Color(0xFFF57C00)
 val OrangeBg = Color(0xFFFFF3E0)
 val RedText = Color(0xFFD32F2F)
 val RedBg = Color(0xFFFFEBEE)
-val StampColor = Color(0x66D32F2F) // لون أحمر شفاف قليلاً للختم
+val StampColor = Color(0x66D32F2F)
 
 @Composable
 fun InvoiceDetailScreen(
+    invoiceId: Int,
     viewModel: InvoiceDetailViewModel = viewModel(),
     onNavigateBack: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(invoiceId) {
+        viewModel.loadInvoiceDetail(invoiceId)
+    }
 
     InvoiceDetailContent(
         uiState = uiState,
@@ -88,10 +94,7 @@ fun InvoiceDetailContent(
             contentPadding = PaddingValues(bottom = 24.dp)
         ) {
             item {
-                // الفاتورة بالكامل في صندوق واحد لنتمكن من وضع الختم فوقها
                 Box(modifier = Modifier.fillMaxWidth()) {
-
-                    // بطاقة الفاتورة البيضاء
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -99,17 +102,13 @@ fun InvoiceDetailContent(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Column(modifier = Modifier.padding(20.dp)) {
-
-                            // الهيدر (الشعار ومعلومات الفاتورة)
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.Top
                             ) {
                                 Column {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text("BGrowth", color = DarkGreen, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                                    }
+                                    Text("BGrowth", color = DarkGreen, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                                     Spacer(modifier = Modifier.height(2.dp))
                                     Text("Ahmad's Coffee Shop", color = GrayText, fontSize = 12.sp)
                                 }
@@ -125,7 +124,6 @@ fun InvoiceDetailContent(
 
                             Spacer(modifier = Modifier.height(24.dp))
 
-                            // فاتورة إلى
                             Text("Bill To", color = GrayText, fontSize = 12.sp)
                             Spacer(modifier = Modifier.height(4.dp))
                             Row(
@@ -140,7 +138,6 @@ fun InvoiceDetailContent(
                             HorizontalDivider(color = BorderLight)
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            // رأس جدول العناصر
                             Row(modifier = Modifier.fillMaxWidth()) {
                                 Text("ITEM", color = GrayText, fontSize = 10.sp, modifier = Modifier.weight(2f))
                                 Text("QTY", color = GrayText, fontSize = 10.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
@@ -148,7 +145,6 @@ fun InvoiceDetailContent(
                             }
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            // عناصر الفاتورة
                             uiState.items.forEach { item ->
                                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                     Text(item.name, color = Color.Black, fontSize = 12.sp, modifier = Modifier.weight(2f))
@@ -162,7 +158,6 @@ fun InvoiceDetailContent(
                             HorizontalDivider(color = BorderLight)
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            // الإجمالي
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -174,12 +169,11 @@ fun InvoiceDetailContent(
                         }
                     }
 
-                    // ختم الإلغاء (يظهر فوق الفاتورة في المنتصف إذا كانت ملغاة)
                     if (uiState.status == InvoiceStatus.CANCELED) {
                         Box(
                             modifier = Modifier
                                 .align(Alignment.Center)
-                                .rotate(-15f) // ميلان الختم
+                                .rotate(-15f)
                                 .border(4.dp, StampColor, RoundedCornerShape(8.dp))
                                 .padding(horizontal = 24.dp, vertical = 8.dp)
                         ) {
@@ -192,11 +186,10 @@ fun InvoiceDetailContent(
                             )
                         }
                     }
-                } // نهاية الصندوق المشترك
+                }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // صندوق التحذير والملاحظات
                 if (uiState.status == InvoiceStatus.PENDING) {
                     Row(
                         modifier = Modifier
@@ -223,13 +216,12 @@ fun InvoiceDetailContent(
                     ) {
                         Icon(Icons.Outlined.Block, contentDescription = null, tint = RedText, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("This invoice was cancelled on ${uiState.cancelDate} and can't be edited or reissued.", color = RedText, fontSize = 12.sp)
+                        Text("This invoice was cancelled on ${uiState.cancelDate ?: "N/A"} and can't be edited or reissued.", color = RedText, fontSize = 12.sp)
                     }
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // الأزرار السفلية بناءً على الحالة
                 if (uiState.status == InvoiceStatus.PENDING) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -247,7 +239,7 @@ fun InvoiceDetailContent(
                         }
 
                         OutlinedButton(
-                            onClick = { /* Share Logic */ },
+                            onClick = { /* Share */ },
                             modifier = Modifier.weight(0.4f).height(50.dp),
                             shape = RoundedCornerShape(12.dp),
                             border = BorderStroke(1.dp, BorderLight),
@@ -269,7 +261,7 @@ fun InvoiceDetailContent(
                     }
                 } else if (uiState.status == InvoiceStatus.CANCELED) {
                     Button(
-                        onClick = { /* Create New Logic */ },
+                        onClick = { /* Create New */ },
                         modifier = Modifier.fillMaxWidth().height(50.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = DarkGreen),
                         shape = RoundedCornerShape(12.dp)
@@ -282,7 +274,6 @@ fun InvoiceDetailContent(
             }
         }
 
-        // نافذة التأكيد للإلغاء (Dialog)
         if (uiState.showCancelDialog) {
             AlertDialog(
                 onDismissRequest = { onShowCancelDialog(false) },
@@ -322,34 +313,63 @@ fun InvoiceDetailContent(
 
 // ============================== Previews ============================== //
 
-@Preview(showBackground = true, device = "id:pixel_5", name = "1. Pending Invoice")
+@Preview(showBackground = true, name = "1. Pending Invoice Detail")
 @Composable
 fun InvoicePendingPreview() {
+    val mockUiState = InvoiceDetailUiState(
+        invoiceId = "INV-0142",
+        date = "Sep 8, 2026",
+        status = InvoiceStatus.PENDING,
+        billToName = "Mohammed Khalil",
+        billToPhone = "+970 599 000 000",
+        items = listOf(
+            InvoiceItemLine("Espresso Coffee", 2, "$10.00"),
+            InvoiceItemLine("Croissant", 3, "$15.00")
+        ),
+        totalAmount = "$25.00"
+    )
     MaterialTheme {
         InvoiceDetailContent(
-            uiState = InvoiceDetailUiState(status = InvoiceStatus.PENDING),
+            uiState = mockUiState,
             onShowCancelDialog = {}, onConfirmCancel = {}, onMarkAsPaid = {}, onNavigateBack = {}
         )
     }
 }
 
-@Preview(showBackground = true, device = "id:pixel_5", name = "2. Canceled Invoice")
+@Preview(showBackground = true, name = "2. Canceled Invoice Detail")
 @Composable
 fun InvoiceCanceledPreview() {
+    val mockUiState = InvoiceDetailUiState(
+        invoiceId = "INV-0141",
+        date = "Sep 3, 2026",
+        status = InvoiceStatus.CANCELED,
+        cancelDate = "Sep 4, 2026",
+        billToName = "Rana Nasser",
+        billToPhone = "+970 592 111 222",
+        items = listOf(
+            InvoiceItemLine("Cappuccino Large", 1, "$12.00")
+        ),
+        totalAmount = "$12.00"
+    )
     MaterialTheme {
         InvoiceDetailContent(
-            uiState = InvoiceDetailUiState(status = InvoiceStatus.CANCELED, cancelDate = "Sep 4"),
+            uiState = mockUiState,
             onShowCancelDialog = {}, onConfirmCancel = {}, onMarkAsPaid = {}, onNavigateBack = {}
         )
     }
 }
 
-@Preview(showBackground = true, device = "id:pixel_5", name = "3. Cancel Dialog")
+@Preview(showBackground = true, name = "3. Cancel Confirmation Dialog")
 @Composable
 fun InvoiceDialogPreview() {
+    val mockUiState = InvoiceDetailUiState(
+        invoiceId = "INV-0142",
+        status = InvoiceStatus.PENDING,
+        showCancelDialog = true
+    )
     MaterialTheme {
         InvoiceDetailContent(
-            uiState = InvoiceDetailUiState(status = InvoiceStatus.PENDING, showCancelDialog = true),
+            uiState = mockUiState,
             onShowCancelDialog = {}, onConfirmCancel = {}, onMarkAsPaid = {}, onNavigateBack = {}
         )
     }

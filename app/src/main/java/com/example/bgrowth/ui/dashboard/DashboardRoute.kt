@@ -21,6 +21,11 @@ fun DashboardRoute(
     onProductsClick: () -> Unit,
     onSalesClick: () -> Unit,
 
+    onAddExpenseClick: () -> Unit,   // تم الإضافة
+    onViewReportsClick: () -> Unit,  // تم الإضافة
+    onDebtsClick: () -> Unit,        // تم الإضافة لـ Sprint 4
+    onInvoicesClick: () -> Unit,     // تم الإضافة لـ Sprint 4
+
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = viewModel()
 ) {

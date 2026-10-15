@@ -25,10 +25,19 @@ class InvoicesViewModel(
 
     fun loadInvoices() {
         viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+
             val result = repository.getInvoices()
             if (result.isSuccess) {
                 allInvoices = result.getOrDefault(emptyList())
                 applySearchAndFilter(_uiState.value.searchQuery)
+            } else {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = result.exceptionOrNull()?.message ?: "Failed to load invoices"
+                    )
+                }
             }
         }
     }
@@ -51,19 +60,25 @@ class InvoicesViewModel(
         val mappedItems = filtered.map { invoice ->
             val status = when (invoice.status.uppercase()) {
                 "CANCELLED" -> InvoiceStatus.CANCELED
-                "PAID" -> InvoiceStatus.PAID
+                "ISSUED", "PAID" -> InvoiceStatus.PAID
                 else -> InvoiceStatus.PENDING
             }
 
             InvoiceItem(
-                id = invoice.invoice_number,
+                id = invoice.id, // تم التعديل لتمرير הـ ID الرقمي الصحيح للملاحة والتفاصيل
+                invoiceNumber = invoice.invoice_number,
                 customerName = invoice.customer_name.ifEmpty { "Customer #${invoice.id}" },
-                date = invoice.issued_at.take(10), // أخذ تاريخ فقط من الـ Timestamp
+                date = invoice.issued_at.take(10),
                 amount = "$${invoice.total}",
                 status = status
             )
         }
 
-        _uiState.update { it.copy(invoices = mappedItems) }
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                invoices = mappedItems
+            )
+        }
     }
 }

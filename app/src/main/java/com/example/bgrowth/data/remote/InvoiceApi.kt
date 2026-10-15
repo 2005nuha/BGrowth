@@ -8,12 +8,12 @@ import retrofit2.http.Path
 
 interface InvoiceApi {
 
-    @GET("api/invoices/")
+    @GET("api/business/invoices/")
     suspend fun getInvoices(): Response<List<InvoiceResponse>>
 
-    @GET("api/invoices/{id}/")
+    @GET("api/business/invoices/{id}/")
     suspend fun getInvoiceById(@Path("id") id: Int): Response<InvoiceResponse>
 
-    @POST("api/invoices/{id}/cancel/")
+    @POST("api/business/invoices/{id}/cancel/")
     suspend fun cancelInvoice(@Path("id") id: Int): Response<InvoiceResponse>
 }

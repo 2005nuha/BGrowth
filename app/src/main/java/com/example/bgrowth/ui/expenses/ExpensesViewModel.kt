@@ -1,56 +1,57 @@
 package com.example.bgrowth.ui.expenses
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.bgrowth.data.repository.ExpenseRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
-class ExpensesViewModel : ViewModel() {
+class ExpensesViewModel(
+    private val repository: ExpenseRepository = ExpenseRepository()
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ExpensesUiState())
     val uiState: StateFlow<ExpensesUiState> = _uiState.asStateFlow()
 
     init {
-        loadExpenses()
+        fetchExpenses()
     }
 
-    private fun loadExpenses() {
-        val mockGroups = listOf(
-            ExpenseGroup(
-                dateHeader = "Today ,sep7",
-                totalAmount = "-$45.00",
-                items = listOf(
-                    ExpenseItem("Electricity Bill", "Utilities · Today, 9:15 AM", "-$45.00")
-                )
-            ),
-            ExpenseGroup(
-                dateHeader = "Yesterday ,sep6",
-                totalAmount = "-$120.00",
-                items = listOf(
-                    ExpenseItem("Packaging Supplies", "Supplies · Yesterday", "-$120.00"),
-                    ExpenseItem("Delivery Fuel", "Transport · Yesterday", "-$16.00")
-                )
-            )
-        )
+    fun fetchExpenses(category: String? = null) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-        _uiState.update { state ->
-            state.copy(
-                expenseGroups = mockGroups,
-                isLoading = false
-            )
+            repository.getExpenses(category)
+                .onSuccess { dtoList ->
+                    val expenseItems = dtoList.map { dto ->
+                        ExpenseItem(
+                            id = dto.id,
+                            category = dto.category,
+                            description = dto.description.ifBlank { "No description" },
+                            amount = "$${dto.amount}",
+                            date = dto.expense_date
+                        )
+                    }
+
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            expenses = expenseItems,
+                            isEmpty = expenseItems.isEmpty()
+                        )
+                    }
+                }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = error.message ?: "Failed to load expenses"
+                        )
+                    }
+                }
         }
-    }
-
-    fun onSearchQueryChange(newQuery: String) {
-        _uiState.update { it.copy(searchQuery = newQuery) }
-    }
-
-    fun onDateFilterSelected(dateOption: String) {
-        _uiState.update { it.copy(selectedDate = dateOption) }
-    }
-
-    fun onCategoryFilterSelected(categoryOption: String) {
-        _uiState.update { it.copy(selectedCategory = categoryOption) }
     }
 }

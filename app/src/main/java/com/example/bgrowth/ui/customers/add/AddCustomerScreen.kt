@@ -1,4 +1,4 @@
-package com.example.bgrowth.ui.addcustomer
+package com.example.bgrowth.ui.customers.add
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
@@ -18,6 +18,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.bgrowth.ui.customers.add.AddCustomerUiState
+import com.example.bgrowth.ui.customers.add.AddCustomerViewModel
 
 val DarkGreen = Color(0xFF105942)
 val BackgroundColor = Color(0xFFF9F9F9)

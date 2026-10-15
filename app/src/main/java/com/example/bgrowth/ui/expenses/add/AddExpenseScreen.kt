@@ -1,4 +1,4 @@
-package com.example.bgrowth.ui.addexpence
+package com.example.bgrowth.ui.expenses.add
 
 
 import androidx.compose.material.icons.Icons

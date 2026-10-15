@@ -1,4 +1,4 @@
-package com.example.bgrowth.ui.customerprofile
+package com.example.bgrowth.ui.customers.profile
 
 data class PurchaseItem(
     val id: Int,

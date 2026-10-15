@@ -41,7 +41,7 @@ fun InvoicesScreen(
     viewModel: InvoicesViewModel = viewModel(),
     onNavigateBack: () -> Unit = {},
     onAddInvoiceClick: () -> Unit = {},
-    onInvoiceClick: (String) -> Unit = {}
+    onInvoiceClick: (Int) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -61,7 +61,7 @@ fun InvoicesContent(
     onSearchQueryChange: (String) -> Unit,
     onNavigateBack: () -> Unit,
     onAddInvoiceClick: () -> Unit,
-    onInvoiceClick: (String) -> Unit
+    onInvoiceClick: (Int) -> Unit
 ) {
     Scaffold(
         containerColor = BackgroundColor,
@@ -71,7 +71,6 @@ fun InvoicesContent(
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp, vertical = 24.dp)
             ) {
-                // شريط العنوان
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = onNavigateBack, modifier = Modifier.size(24.dp)) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = DarkGreen)
@@ -82,7 +81,6 @@ fun InvoicesContent(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // حقل البحث مع زر الإعدادات
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -109,7 +107,7 @@ fun InvoicesContent(
                         color = Color.White,
                         modifier = Modifier.size(56.dp)
                     ) {
-                        IconButton(onClick = { /* Handle settings */ }) {
+                        IconButton(onClick = { /* Settings */ }) {
                             Icon(Icons.Outlined.Settings, contentDescription = "Settings", tint = Color.Black)
                         }
                     }
@@ -127,15 +125,33 @@ fun InvoicesContent(
             }
         }
     ) { paddingValues ->
-        LazyColumn(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 20.dp),
-            contentPadding = PaddingValues(bottom = 80.dp) // لضمان عدم تغطية الـ FAB للعناصر
         ) {
-            items(uiState.invoices) { invoice ->
-                InvoiceCard(invoice = invoice, onClick = { onInvoiceClick(invoice.id) })
+            if (uiState.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = DarkGreen
+                )
+            } else if (uiState.invoices.isEmpty()) {
+                Text(
+                    text = "No invoices found",
+                    color = GrayText,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 20.dp),
+                    contentPadding = PaddingValues(bottom = 80.dp)
+                ) {
+                    items(uiState.invoices) { invoice ->
+                        InvoiceCard(invoice = invoice, onClick = { onInvoiceClick(invoice.id) })
+                    }
+                }
             }
         }
     }
@@ -156,7 +172,6 @@ fun InvoiceCard(invoice: InvoiceItem, onClick: () -> Unit) {
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // أيقونة الفاتورة أو رمز الإلغاء
             Box(
                 modifier = Modifier
                     .size(40.dp)
@@ -173,23 +188,21 @@ fun InvoiceCard(invoice: InvoiceItem, onClick: () -> Unit) {
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // تفاصيل الفاتورة
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = invoice.id,
+                    text = invoice.invoiceNumber,
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
                     color = if (invoice.status == InvoiceStatus.CANCELED) GrayText else Color.Black
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "${invoice.customerName} - ${invoice.date}",
+                    text = "${invoice.customerName} • ${invoice.date}",
                     color = GrayText,
                     fontSize = 12.sp
                 )
             }
 
-            // السعر والحالة (مع خط يتوسط السعر إذا كانت ملغاة)
             Column(horizontalAlignment = Alignment.End) {
                 Text(
                     text = invoice.amount,
@@ -218,21 +231,33 @@ fun InvoiceCard(invoice: InvoiceItem, onClick: () -> Unit) {
 
 // ============================== Previews ============================== //
 
-@Preview(showBackground = true, device = "id:pixel_5", name = "Invoices List Screen")
+@Preview(showBackground = true, name = "1. Invoices List Populated")
 @Composable
 fun InvoicesScreenPreview() {
-    // تعريف البيانات الوهمية مباشرة هنا لتجنب أخطاء بناء الـ ViewModel
     val mockUiState = InvoicesUiState(
         invoices = listOf(
-            InvoiceItem("INV-0143", "Sara Ahmed", "Sep 9", "$35.00", InvoiceStatus.PAID),
-            InvoiceItem("INV-0142", "Mohammed Khalil", "Sep 8", "$90.00", InvoiceStatus.PENDING),
-            InvoiceItem("INV-0141", "Rana Nasser", "Sep 3", "$60.00", InvoiceStatus.CANCELED)
+            InvoiceItem(1, "INV-0143", "Sara Ahmed", "Sep 9", "$35.00", InvoiceStatus.PAID),
+            InvoiceItem(2, "INV-0142", "Mohammed Khalil", "Sep 8", "$90.00", InvoiceStatus.PENDING),
+            InvoiceItem(3, "INV-0141", "Rana Nasser", "Sep 3", "$60.00", InvoiceStatus.CANCELED)
         )
     )
-
     MaterialTheme {
         InvoicesContent(
             uiState = mockUiState,
+            onSearchQueryChange = {},
+            onNavigateBack = {},
+            onAddInvoiceClick = {},
+            onInvoiceClick = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "2. Loading State")
+@Composable
+fun InvoicesLoadingPreview() {
+    MaterialTheme {
+        InvoicesContent(
+            uiState = InvoicesUiState(isLoading = true),
             onSearchQueryChange = {},
             onNavigateBack = {},
             onAddInvoiceClick = {},

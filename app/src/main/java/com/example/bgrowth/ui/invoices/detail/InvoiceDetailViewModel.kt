@@ -1,4 +1,4 @@
-package com.example.bgrowth.ui.invoicedetail
+package com.example.bgrowth.ui.invoices.detail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
