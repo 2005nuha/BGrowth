@@ -16,22 +16,9 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    /*
-     * ضع هنا رابط الـBackend الحالي.
-     *
-     * إذا كان Backend يعمل على نفس الكمبيوتر
-     * والتطبيق يعمل على Android Emulator:
-     *
-     * http://10.0.2.2:8000/
-     */
     private const val BASE_URL =
-        "http://afterwards-payments-gotten-beef.trycloudflare.com/"
+        "http://cooked-expanding-bouquet-offerings.trycloudflare.com/"
 
-    /*
-     * Logging لجميع HTTP requests/responses.
-     *
-     * Authorization يتم إخفاؤه من Logcat.
-     */
     private val loggingInterceptor:
             HttpLoggingInterceptor by lazy {
 
@@ -307,6 +294,20 @@ object RetrofitClient {
             ProductApi::class.java
         )
     }
+
+    /*
+     * Sales endpoints.
+     *
+     * تحتاج Authorization.
+     * تستخدم نفس Access Token
+     * ونفس Token Refresh الخاص بباقي التطبيق.
+     */
+    val saleApi: SaleApi by lazy {
+        authenticatedRetrofit.create(
+            SaleApi::class.java
+        )
+    }
+
 
     /*
      * يحسب عدد مرات إعادة نفس Response
