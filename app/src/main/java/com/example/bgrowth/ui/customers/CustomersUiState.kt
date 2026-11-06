@@ -14,5 +14,5 @@ data class CustomerItem(
     val name: String,
     val phone: String,
     val dueText: String,
-    val hasDebt: Boolean
+    val hasDebt: Boolean = false
 )

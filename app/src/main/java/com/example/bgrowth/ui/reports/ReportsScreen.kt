@@ -89,92 +89,93 @@ fun ReportsContent(
             }
         }
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 20.dp),
-            contentPadding = PaddingValues(bottom = 24.dp)
-        ) {
-            item {
-                // Card 1: Header
-                Card(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    border = BorderStroke(1.dp, BorderLight),
-                    shape = RoundedCornerShape(12.dp)
+        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+            if (uiState.isLoading) {
+                CircularProgressIndicator(color = DarkGreen, modifier = Modifier.align(Alignment.Center))
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 20.dp),
+                    contentPadding = PaddingValues(bottom = 24.dp)
                 ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
-                        Text("Business Performance Report", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text("Ahmad's Coffee Shop", color = GrayText, fontSize = 14.sp)
-
-                        Spacer(modifier = Modifier.height(16.dp))
-                        HorizontalDivider(color = BorderLight)
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            border = BorderStroke(1.dp, BorderLight),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
-                            Text("Period", color = GrayText, fontSize = 14.sp)
-                            Text(
-                                text = uiState.selectedPeriod.displayLabel + " ▾",
-                                color = DarkGreen,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp,
-                                modifier = Modifier.clickable { onPeriodSelectorClick(true) }
-                            )
+                            Column(modifier = Modifier.padding(20.dp)) {
+                                Text("Business Performance Report", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text("Ahmad's Coffee Shop", color = GrayText, fontSize = 14.sp)
+
+                                Spacer(modifier = Modifier.height(16.dp))
+                                HorizontalDivider(color = BorderLight)
+                                Spacer(modifier = Modifier.height(16.dp))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("Period", color = GrayText, fontSize = 14.sp)
+                                    Text(
+                                        text = uiState.selectedPeriod.displayLabel + " ▾",
+                                        color = DarkGreen,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp,
+                                        modifier = Modifier.clickable { onPeriodSelectorClick(true) }
+                                    )
+                                }
+                            }
                         }
+
+                        Card(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            border = BorderStroke(1.dp, BorderLight),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(20.dp)) {
+                                MetricRow(C_Sales, "Total Sales", uiState.totalSales, Color.Black)
+                                HorizontalDivider(color = BorderLight, modifier = Modifier.padding(vertical = 12.dp))
+
+                                MetricRow(C_Expenses, "Total Expenses", uiState.totalExpenses, Color.Black)
+                                HorizontalDivider(color = BorderLight, modifier = Modifier.padding(vertical = 12.dp))
+
+                                MetricRow(C_NetProfit, "Net Profit", uiState.netProfit, DarkGreen)
+                                HorizontalDivider(color = BorderLight, modifier = Modifier.padding(vertical = 12.dp))
+
+                                MetricRow(C_OwedToMe, "Outstanding — Owed to Me", uiState.owedToMe, DarkGreen)
+                                HorizontalDivider(color = BorderLight, modifier = Modifier.padding(vertical = 12.dp))
+
+                                MetricRow(C_IOwe, "Outstanding — I Owe", uiState.iOwe, C_IOwe)
+                            }
+                        }
+
+                        if (uiState.selectedPeriod == ReportPeriod.THIS_YEAR) {
+                            DonutChartCard()
+                        } else {
+                            BarChartCard(uiState.selectedPeriod.title)
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text(
+                            text = "Generated on Sep 12, 2026 · BGrowth",
+                            color = GrayText,
+                            fontSize = 10.sp,
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center
+                        )
                     }
                 }
-
-                // Card 2: Metrics List
-                Card(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    border = BorderStroke(1.dp, BorderLight),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
-                        MetricRow(C_Sales, "Total Sales", uiState.totalSales, Color.Black)
-                        HorizontalDivider(color = BorderLight, modifier = Modifier.padding(vertical = 12.dp))
-
-                        MetricRow(C_Expenses, "Total Expenses", uiState.totalExpenses, Color.Black)
-                        HorizontalDivider(color = BorderLight, modifier = Modifier.padding(vertical = 12.dp))
-
-                        MetricRow(C_NetProfit, "Net Profit", uiState.netProfit, DarkGreen)
-                        HorizontalDivider(color = BorderLight, modifier = Modifier.padding(vertical = 12.dp))
-
-                        MetricRow(C_OwedToMe, "Outstanding — Owed to Me", uiState.owedToMe, DarkGreen)
-                        HorizontalDivider(color = BorderLight, modifier = Modifier.padding(vertical = 12.dp))
-
-                        MetricRow(C_IOwe, "Outstanding — I Owe", uiState.iOwe, C_IOwe)
-                    }
-                }
-
-                // Card 3: Charts
-                if (uiState.selectedPeriod == ReportPeriod.THIS_YEAR) {
-                    DonutChartCard()
-                } else {
-                    BarChartCard(uiState.selectedPeriod.title)
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = "Generated on Sep 12, 2026 · BGrowth",
-                    color = GrayText,
-                    fontSize = 10.sp,
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center
-                )
             }
         }
     }
 
-    // Modal Bottom Sheet
     if (uiState.showPeriodSelector) {
         ModalBottomSheet(
             onDismissRequest = { onPeriodSelectorClick(false) },
@@ -235,8 +236,6 @@ fun ReportsContent(
         }
     }
 }
-
-// ======================== Helper Components ======================== //
 
 @Composable
 fun MetricRow(iconColor: Color, title: String, amount: String, amountColor: Color) {
@@ -377,40 +376,5 @@ fun DonutChartCard() {
                 Text(" — $3,240.00 in sales", fontSize = 12.sp, color = GrayText)
             }
         }
-    }
-}
-
-// ============================== Previews ============================== //
-
-@Preview(showBackground = true, device = "id:pixel_5", name = "1. Reports (Month)")
-@Composable
-fun ReportsMonthPreview() {
-    MaterialTheme {
-        ReportsContent(
-            uiState = ReportsUiState(selectedPeriod = ReportPeriod.THIS_MONTH),
-            onPeriodSelectorClick = {}, onBottomSheetPeriodSelected = {}, onApplyPeriod = {}, onNavigateBack = {}
-        )
-    }
-}
-
-@Preview(showBackground = true, device = "id:pixel_5", name = "2. Reports (Year)")
-@Composable
-fun ReportsYearPreview() {
-    MaterialTheme {
-        ReportsContent(
-            uiState = ReportsUiState(selectedPeriod = ReportPeriod.THIS_YEAR),
-            onPeriodSelectorClick = {}, onBottomSheetPeriodSelected = {}, onApplyPeriod = {}, onNavigateBack = {}
-        )
-    }
-}
-
-@Preview(showBackground = true, device = "id:pixel_5", name = "3. Bottom Sheet")
-@Composable
-fun ReportsBottomSheetPreview() {
-    MaterialTheme {
-        ReportsContent(
-            uiState = ReportsUiState(showPeriodSelector = true),
-            onPeriodSelectorClick = {}, onBottomSheetPeriodSelected = {}, onApplyPeriod = {}, onNavigateBack = {}
-        )
     }
 }

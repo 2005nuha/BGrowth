@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -16,24 +17,15 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.bgrowth.data.repository.AuthRepository
 import com.example.bgrowth.ui.businesssetup.BusinessSetupScreen
-import com.example.bgrowth.ui.customers.CustomersScreen
 import com.example.bgrowth.ui.dashboard.DashboardRoute
-import com.example.bgrowth.ui.debts.DebtsScreen
-import com.example.bgrowth.ui.debts.add.AddDebtScreen
-import com.example.bgrowth.ui.debts.detail.DebtDetailScreen
-import com.example.bgrowth.ui.expenses.ExpensesScreen
 import com.example.bgrowth.ui.forgotpassword.ForgotPasswordScreen
-import com.example.bgrowth.ui.invoices.InvoicesScreen
-import com.example.bgrowth.ui.invoices.detail.InvoiceDetailScreen
 import com.example.bgrowth.ui.login.LoginScreen
 import com.example.bgrowth.ui.login.LoginViewModel
 import com.example.bgrowth.ui.onboarding.OnboardingPagerScreen
 import com.example.bgrowth.ui.product.AddProductScreen
 import com.example.bgrowth.ui.product.ProductsScreen
-import com.example.bgrowth.ui.profitloss.ProfitLossScreen
 import com.example.bgrowth.ui.register.RegisterScreen
 import com.example.bgrowth.ui.register.RegisterViewModel
-import com.example.bgrowth.ui.reports.ReportsScreen
 import com.example.bgrowth.ui.resetpassword.ResetPasswordScreen
 import com.example.bgrowth.ui.sales.RecordSaleScreen
 import com.example.bgrowth.ui.sales.SalesHistoryScreen
@@ -59,26 +51,36 @@ fun AppNavGraph(
         // --------------------------------------------------
         // Splash
         // --------------------------------------------------
+
         composable(Routes.SPLASH) {
+
             LaunchedEffect(Unit) {
                 delay(SPLASH_DURATION_MILLIS)
+
                 navController.navigate(Routes.ONBOARDING) {
-                    popUpTo(Routes.SPLASH) { inclusive = true }
+                    popUpTo(Routes.SPLASH) {
+                        inclusive = true
+                    }
+
                     launchSingleTop = true
                 }
             }
+
             SplashScreen()
         }
 
         // --------------------------------------------------
         // Onboarding
         // --------------------------------------------------
+
         composable(Routes.ONBOARDING) {
+
             val openRegister = {
                 navController.navigate(Routes.REGISTER) {
                     launchSingleTop = true
                 }
             }
+
             OnboardingPagerScreen(
                 onFinished = openRegister,
                 onSkipClick = openRegister
@@ -88,18 +90,29 @@ fun AppNavGraph(
         // --------------------------------------------------
         // Register
         // --------------------------------------------------
+
         composable(Routes.REGISTER) {
-            val registerViewModel: RegisterViewModel = viewModel()
+
+            val registerViewModel: RegisterViewModel =
+                viewModel()
+
             RegisterScreen(
                 viewModel = registerViewModel,
+
                 onLoginClick = {
                     navController.navigate(Routes.LOGIN) {
                         launchSingleTop = true
                     }
                 },
+
                 onRegistrationSuccess = {
-                    navController.navigate(Routes.BUSINESS_SETUP) {
-                        popUpTo(Routes.REGISTER) { inclusive = true }
+                    navController.navigate(
+                        Routes.BUSINESS_SETUP
+                    ) {
+                        popUpTo(Routes.REGISTER) {
+                            inclusive = true
+                        }
+
                         launchSingleTop = true
                     }
                 }
@@ -109,36 +122,77 @@ fun AppNavGraph(
         // --------------------------------------------------
         // Verification
         // --------------------------------------------------
+
         composable(
             route = Routes.VERIFICATION_ROUTE,
             arguments = listOf(
-                navArgument(Routes.VERIFICATION_MODE_ARGUMENT) { type = NavType.StringType },
-                navArgument(Routes.VERIFICATION_TARGET_ARGUMENT) { type = NavType.StringType }
+
+                navArgument(
+                    Routes.VERIFICATION_MODE_ARGUMENT
+                ) {
+                    type = NavType.StringType
+                },
+
+                navArgument(
+                    Routes.VERIFICATION_TARGET_ARGUMENT
+                ) {
+                    type = NavType.StringType
+                }
             )
         ) { backStackEntry ->
-            val verificationTarget = backStackEntry.arguments
-                ?.getString(Routes.VERIFICATION_TARGET_ARGUMENT)
-                .orEmpty()
 
-            val verificationMode = VerificationMode.fromRouteValue(
-                backStackEntry.arguments?.getString(Routes.VERIFICATION_MODE_ARGUMENT)
-            )
+            val verificationTarget =
+                backStackEntry.arguments
+                    ?.getString(
+                        Routes.VERIFICATION_TARGET_ARGUMENT
+                    )
+                    .orEmpty()
 
-            val factory = remember { verificationViewModelFactory() }
-            val verificationViewModel: VerificationViewModel = viewModel(factory = factory)
+            val verificationMode =
+                VerificationMode.fromRouteValue(
+                    backStackEntry.arguments
+                        ?.getString(
+                            Routes.VERIFICATION_MODE_ARGUMENT
+                        )
+                )
+
+            val factory = remember {
+                verificationViewModelFactory()
+            }
+
+            val verificationViewModel:
+                    VerificationViewModel =
+                viewModel(factory = factory)
 
             VerificationScreen(
                 verificationTarget = verificationTarget,
                 verificationMode = verificationMode,
                 viewModel = verificationViewModel,
-                onBackClick = { navController.popBackStack() },
+
+                onBackClick = {
+                    navController.popBackStack()
+                },
+
                 onVerificationSuccess = {
+
                     when (verificationMode) {
+
                         VerificationMode.SIGN_UP -> {
-                            navController.navigate(Routes.BUSINESS_SETUP) { launchSingleTop = true }
+
+                            navController.navigate(
+                                Routes.BUSINESS_SETUP
+                            ) {
+                                launchSingleTop = true
+                            }
                         }
+
                         VerificationMode.PASSWORD_RESET -> {
-                            navController.navigate(Routes.RESET_PASSWORD) { launchSingleTop = true }
+
+                            navController.navigate(
+                                Routes.RESET_PASSWORD
+                            ) {
+                                launchSingleTop = true
+                            }
                         }
                     }
                 }
@@ -148,14 +202,21 @@ fun AppNavGraph(
         // --------------------------------------------------
         // Forgot Password
         // --------------------------------------------------
+
         composable(Routes.FORGOT_PASSWORD) {
+
             ForgotPasswordScreen(
-                onBackClick = { navController.popBackStack() },
+                onBackClick = {
+                    navController.popBackStack()
+                },
+
                 onCodeSent = { email ->
+
                     navController.navigate(
                         Routes.verification(
                             verificationTarget = email,
-                            verificationMode = VerificationMode.PASSWORD_RESET
+                            verificationMode =
+                                VerificationMode.PASSWORD_RESET
                         )
                     ) {
                         launchSingleTop = true
@@ -167,12 +228,26 @@ fun AppNavGraph(
         // --------------------------------------------------
         // Reset Password
         // --------------------------------------------------
+
         composable(Routes.RESET_PASSWORD) {
+
             ResetPasswordScreen(
-                onBackClick = { navController.popBackStack() },
+                onBackClick = {
+                    navController.popBackStack()
+                },
+
                 onPasswordResetSuccess = {
-                    navController.navigate(Routes.LOGIN) {
-                        popUpTo(Routes.FORGOT_PASSWORD) { inclusive = true }
+
+                    navController.navigate(
+                        Routes.LOGIN
+                    ) {
+
+                        popUpTo(
+                            Routes.FORGOT_PASSWORD
+                        ) {
+                            inclusive = true
+                        }
+
                         launchSingleTop = true
                     }
                 }
@@ -182,22 +257,49 @@ fun AppNavGraph(
         // --------------------------------------------------
         // Login
         // --------------------------------------------------
+
         composable(Routes.LOGIN) {
-            val loginViewModel: LoginViewModel = viewModel()
+
+            val loginViewModel:
+                    LoginViewModel = viewModel()
+
             LoginScreen(
                 viewModel = loginViewModel,
-                onBackClick = { navController.popBackStack() },
+
+                onBackClick = {
+                    navController.popBackStack()
+                },
+
                 onLoginSuccess = {
-                    navController.navigate(Routes.BUSINESS_SETUP) {
-                        popUpTo(Routes.LOGIN) { inclusive = true }
+
+                    navController.navigate(
+                        Routes.BUSINESS_SETUP
+                    ) {
+
+                        popUpTo(Routes.LOGIN) {
+                            inclusive = true
+                        }
+
                         launchSingleTop = true
                     }
                 },
+
                 onCreateAccountClick = {
-                    navController.navigate(Routes.REGISTER) { launchSingleTop = true }
+
+                    navController.navigate(
+                        Routes.REGISTER
+                    ) {
+                        launchSingleTop = true
+                    }
                 },
+
                 onForgotPasswordClick = {
-                    navController.navigate(Routes.FORGOT_PASSWORD) { launchSingleTop = true }
+
+                    navController.navigate(
+                        Routes.FORGOT_PASSWORD
+                    ) {
+                        launchSingleTop = true
+                    }
                 }
             )
         }
@@ -205,12 +307,27 @@ fun AppNavGraph(
         // --------------------------------------------------
         // Business Setup
         // --------------------------------------------------
+
         composable(Routes.BUSINESS_SETUP) {
+
             BusinessSetupScreen(
-                onBackClick = { navController.popBackStack() },
+
+                onBackClick = {
+                    navController.popBackStack()
+                },
+
                 onBusinessSetupSuccess = {
-                    navController.navigate(Routes.DASHBOARD) {
-                        popUpTo(Routes.BUSINESS_SETUP) { inclusive = true }
+
+                    navController.navigate(
+                        Routes.DASHBOARD
+                    ) {
+
+                        popUpTo(
+                            Routes.BUSINESS_SETUP
+                        ) {
+                            inclusive = true
+                        }
+
                         launchSingleTop = true
                     }
                 }
@@ -225,7 +342,6 @@ fun AppNavGraph(
             val coroutineScope = rememberCoroutineScope()
 
             DashboardRoute(
-                // Sprint 2 navigation
                 onRecordSaleClick = {
                     navController.navigate(Routes.RECORD_SALE) { launchSingleTop = true }
                 },
@@ -238,8 +354,6 @@ fun AppNavGraph(
                 onSalesClick = {
                     navController.navigate(Routes.SALES_HISTORY) { launchSingleTop = true }
                 },
-
-                // Sprint 3 & Sprint 4 Navigation
                 onAddExpenseClick = {
                     navController.navigate(Routes.EXPENSES) { launchSingleTop = true }
                 },
@@ -252,8 +366,6 @@ fun AppNavGraph(
                 onInvoicesClick = {
                     navController.navigate(Routes.INVOICES) { launchSingleTop = true }
                 },
-
-                // Drawer navigation
                 onProfileClick = {},
                 onNotificationsClick = {},
                 onBusinessSettingsClick = {
@@ -280,35 +392,74 @@ fun AppNavGraph(
         // --------------------------------------------------
         // Products
         // --------------------------------------------------
+
         composable(Routes.PRODUCTS) {
+
             ProductsScreen(
-                onBackClick = { navController.popBackStack() },
-                onAddProductClick = {
-                    navController.navigate(Routes.ADD_PRODUCT) { launchSingleTop = true }
+
+                onBackClick = {
+                    navController.popBackStack()
                 },
-                onProductClick = { _ -> }
+
+                onAddProductClick = {
+
+                    navController.navigate(
+                        Routes.ADD_PRODUCT
+                    ) {
+                        launchSingleTop = true
+                    }
+                },
+
+                onProductClick = { productId ->
+
+                    // TODO:
+                    // Edit Product / Product Details later
+                    // using productId.
+                }
             )
         }
 
         // --------------------------------------------------
         // Add Product
         // --------------------------------------------------
+
         composable(Routes.ADD_PRODUCT) {
+
             AddProductScreen(
-                onBackClick = { navController.popBackStack() },
-                onCancelClick = { navController.popBackStack() },
-                onProductSaved = { navController.popBackStack() }
+
+                onBackClick = {
+                    navController.popBackStack()
+                },
+
+                onCancelClick = {
+                    navController.popBackStack()
+                },
+
+                onProductSaved = {
+                    navController.popBackStack()
+                }
             )
         }
 
         // --------------------------------------------------
         // Record Sale
         // --------------------------------------------------
+
         composable(Routes.RECORD_SALE) {
+
             RecordSaleScreen(
-                onBackClick = { navController.popBackStack() },
+
+                onBackClick = {
+                    navController.popBackStack()
+                },
+
                 onViewAllClick = {
-                    navController.navigate(Routes.SALES_HISTORY) { launchSingleTop = true }
+
+                    navController.navigate(
+                        Routes.SALES_HISTORY
+                    ) {
+                        launchSingleTop = true
+                    }
                 }
             )
         }
@@ -316,123 +467,73 @@ fun AppNavGraph(
         // --------------------------------------------------
         // Sales History
         // --------------------------------------------------
+
         composable(Routes.SALES_HISTORY) {
+
             SalesHistoryScreen(
-                onBackClick = { navController.popBackStack() },
+
+                onBackClick = {
+                    navController.popBackStack()
+                },
+
                 onAddSaleClick = {
-                    navController.navigate(Routes.RECORD_SALE) { launchSingleTop = true }
+
+                    navController.navigate(
+                        Routes.RECORD_SALE
+                    ) {
+                        launchSingleTop = true
+                    }
                 },
-                onSaleClick = { _ -> }
-            )
-        }
 
-        // --------------------------------------------------
-        // Sprint 3: Expenses Module
-        // --------------------------------------------------
-        composable(Routes.EXPENSES) {
-            ExpensesScreen(
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
+                onSaleClick = { saleId ->
 
-        // --------------------------------------------------
-        // Sprint 3: Customers Module
-        // --------------------------------------------------
-        composable(Routes.CUSTOMERS) {
-            CustomersScreen(
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
-
-        // --------------------------------------------------
-        // Sprint 4: Debts Module
-        // --------------------------------------------------
-        composable(Routes.DEBTS) {
-            DebtsScreen(
-                onNavigateBack = { navController.popBackStack() },
-                onAddDebtClick = {
-                    navController.navigate(Routes.ADD_DEBT) { launchSingleTop = true }
-                },
-                onDebtClick = { debtId ->
-                    navController.navigate(Routes.debtDetail(debtId)) { launchSingleTop = true }
+                    // TODO:
+                    // Edit Sale / Sale Details later
+                    // using saleId.
                 }
-            )
-        }
-
-        composable(Routes.ADD_DEBT) {
-            AddDebtScreen(
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
-
-        composable(
-            route = Routes.DEBT_DETAIL,
-            arguments = listOf(
-                navArgument(Routes.DEBT_DETAIL_ARGUMENT) { type = NavType.IntType }
-            )
-        ) {
-            DebtDetailScreen(
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
-
-        // --------------------------------------------------
-        // Sprint 4: Invoices Module
-        // --------------------------------------------------
-        composable(Routes.INVOICES) {
-            InvoicesScreen(
-                onNavigateBack = { navController.popBackStack() },
-                onAddInvoiceClick = {
-                    navController.navigate(Routes.RECORD_SALE) { launchSingleTop = true }
-                },
-                onInvoiceClick = { invoiceId ->
-                    navController.navigate(Routes.invoiceDetail(invoiceId)) { launchSingleTop = true }
-                }
-            )
-        }
-
-        composable(
-            route = Routes.INVOICE_DETAIL,
-            arguments = listOf(
-                navArgument(Routes.INVOICE_DETAIL_ARGUMENT) { type = NavType.IntType }
-            )
-        ) { backStackEntry ->
-            val invoiceId = backStackEntry.arguments?.getInt(Routes.INVOICE_DETAIL_ARGUMENT) ?: 0
-            InvoiceDetailScreen(
-                invoiceId = invoiceId,
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
-
-        // --------------------------------------------------
-        // Sprint 4: Reports & Profit Loss
-        // --------------------------------------------------
-        composable(Routes.REPORTS) {
-            ReportsScreen(
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
-
-        composable(Routes.PROFIT_LOSS) {
-            ProfitLossScreen(
-                onNavigateBack = { navController.popBackStack() }
             )
         }
     }
 }
 
+
 // --------------------------------------------------
 // Verification ViewModel Factory
 // --------------------------------------------------
-private fun verificationViewModelFactory(): ViewModelProvider.Factory =
+
+private fun verificationViewModelFactory():
+        ViewModelProvider.Factory =
+
     object : ViewModelProvider.Factory {
+
         @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            if (!modelClass.isAssignableFrom(VerificationViewModel::class.java)) {
-                throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
+        override fun <T : ViewModel> create(
+            modelClass: Class<T>
+        ): T {
+
+            if (
+                !modelClass.isAssignableFrom(
+                    VerificationViewModel::class.java
+                )
+            ) {
+                throw IllegalArgumentException(
+                    "Unknown ViewModel class: ${modelClass.name}"
+                )
             }
+
             return VerificationViewModel() as T
         }
     }
 
-private const val SPLASH_DURATION_MILLIS = 1_750L
+
+// --------------------------------------------------
+// Splash duration
+// --------------------------------------------------
+
+private const val SPLASH_DURATION_MILLIS =
+    1_750L
+
+
+
+
+

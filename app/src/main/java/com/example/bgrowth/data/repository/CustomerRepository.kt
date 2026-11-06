@@ -1,8 +1,8 @@
 package com.example.bgrowth.data.repository
 
-import com.example.bgrowth.data.remote.CreateCustomerRequest
+import com.example.bgrowth.data.model.CreateCustomerRequest
+import com.example.bgrowth.data.model.CustomerDto
 import com.example.bgrowth.data.remote.CustomerApi
-import com.example.bgrowth.data.remote.CustomerDto
 import com.example.bgrowth.data.remote.RetrofitClient
 
 class CustomerRepository(
@@ -14,7 +14,7 @@ class CustomerRepository(
         }
     }
 
-    suspend fun createCustomer(name: String, phone: String, address: String): Result<CustomerDto> {
+    suspend fun createCustomer(name: String, phone: String = "", address: String = ""): Result<CustomerDto> {
         return runCatching {
             api.createCustomer(CreateCustomerRequest(name, phone, address))
         }

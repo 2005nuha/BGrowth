@@ -1,7 +1,5 @@
 package com.example.bgrowth.ui.expenses.add
 
-
-import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -9,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ElectricBolt
@@ -26,6 +25,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.bgrowth.ui.expenses.ExpenseItem
 
 val DarkGreen = Color(0xFF105942)
 val BackgroundColor = Color(0xFFF9F9F9)
@@ -50,7 +50,7 @@ fun AddExpenseScreen(
         onPaymentMethodChange = viewModel::onPaymentMethodChange,
         onToggleCategoryDropdown = viewModel::toggleCategoryDropdown,
         onTogglePaymentMethodDropdown = viewModel::togglePaymentMethodDropdown,
-        onSaveExpense = viewModel::onSaveExpense,
+        onSaveExpense = { viewModel.onSaveExpense(onSuccess = onNavigateBack) },
         onNavigateBack = onNavigateBack,
         onViewAllClick = onViewAllClick
     )
@@ -108,7 +108,6 @@ fun AddExpenseContent(
             contentPadding = PaddingValues(bottom = 24.dp)
         ) {
             item {
-                // البطاقة الخاصة بنموذج الإضافة
                 Card(
                     colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                     border = BorderStroke(1.dp, BorderLight),
@@ -120,7 +119,6 @@ fun AddExpenseContent(
                             .fillMaxWidth()
                             .padding(16.dp)
                     ) {
-                        // حقل اسم المصروف
                         Text("Add Expense", fontWeight = FontWeight.Medium, fontSize = 14.sp, color = Color.Black)
                         Spacer(modifier = Modifier.height(8.dp))
                         OutlinedTextField(
@@ -181,6 +179,7 @@ fun AddExpenseContent(
                                 OutlinedTextField(
                                     value = uiState.date,
                                     onValueChange = onDateChange,
+                                    placeholder = { Text("YYYY-MM-DD", color = Color.LightGray, fontSize = 14.sp) },
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(12.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
@@ -205,19 +204,33 @@ fun AddExpenseContent(
                             }
                         }
 
+                        if (uiState.errorMessage != null) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = uiState.errorMessage,
+                                color = RedText,
+                                fontSize = 12.sp
+                            )
+                        }
+
                         Spacer(modifier = Modifier.height(24.dp))
 
                         Button(
                             onClick = onSaveExpense,
+                            enabled = !uiState.isLoading,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(50.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = DarkGreen),
                             shape = RoundedCornerShape(12.dp)
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.White)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Save Expense", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                            if (uiState.isLoading) {
+                                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                            } else {
+                                Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.White)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Save Expense", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                            }
                         }
                     }
                 }
@@ -248,7 +261,7 @@ fun AddExpenseContent(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            items(uiState.recentExpenses) { item ->
+            items(uiState.recentExpenses, key = { it.id }) { item ->
                 RecentExpenseItemCard(item = item)
             }
         }
@@ -304,8 +317,8 @@ fun CustomDropdownField(
 }
 
 @Composable
-fun RecentExpenseItemCard(item: RecentExpenseItem) {
-    val (icon, iconTint) = when (item.id) {
+fun RecentExpenseItemCard(item: ExpenseItem) {
+    val (icon, iconTint) = when (item.id % 3) {
         1 -> Icons.Default.ElectricBolt to Color(0xFFFBC02D)
         2 -> Icons.Default.Inventory2 to Color(0xFF8D6E63)
         else -> Icons.Default.LocalShipping to Color(0xFFE53935)
@@ -337,14 +350,14 @@ fun RecentExpenseItemCard(item: RecentExpenseItem) {
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = item.title,
+                    text = item.category,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 15.sp,
                     color = Color.Black
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = item.subtitle,
+                    text = "${item.description} • ${item.date}",
                     color = GrayText,
                     fontSize = 12.sp
                 )
@@ -363,15 +376,14 @@ fun RecentExpenseItemCard(item: RecentExpenseItem) {
 @Composable
 fun AddExpenseScreenPreview() {
     val mockUiState = AddExpenseUiState(
-        expenseName = "",
+        expenseName = "Electricity Bill",
         category = "Utilities",
         price = "45",
-        date = "Today",
+        date = "2026-11-05",
         paymentMethod = "Cash",
         recentExpenses = listOf(
-            RecentExpenseItem(1, "Electricity Bill", "Utilities · Today, 9:15 AM", "-$45.00"),
-            RecentExpenseItem(2, "Packaging Supplies", "Supplies · Yesterday", "-$120.00"),
-            RecentExpenseItem(3, "Delivery Fuel", "Transport · Yesterday", "-$16.00")
+            ExpenseItem(1, "Utilities", "Electricity Bill", "-$45.00", "2026-11-05"),
+            ExpenseItem(2, "Supplies", "Packaging Supplies", "-$120.00", "2026-11-04")
         )
     )
 

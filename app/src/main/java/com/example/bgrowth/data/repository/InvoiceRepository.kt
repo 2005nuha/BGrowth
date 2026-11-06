@@ -1,47 +1,46 @@
 package com.example.bgrowth.data.repository
 
+import com.example.bgrowth.data.model.CreateInvoiceRequest
 import com.example.bgrowth.data.model.InvoiceResponse
+import com.example.bgrowth.data.remote.InvoiceApi
 import com.example.bgrowth.data.remote.RetrofitClient
 
-class InvoiceRepository {
-    private val api = RetrofitClient.invoiceApi
-
-    suspend fun getInvoices(): Result<List<InvoiceResponse>> {
-        return try {
-            val response = api.getInvoices()
-            if (response.isSuccessful && response.body() != null) {
-                Result.success(response.body()!!)
-            } else {
-                Result.failure(Exception("Error fetching invoices: ${response.code()}"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
+class InvoiceRepository(
+    private val api: InvoiceApi = RetrofitClient.invoiceApi
+) {
+    suspend fun getInvoices(status: String? = null): Result<List<InvoiceResponse>> {
+        return runCatching {
+            api.getInvoices(status)
         }
     }
 
-    suspend fun getInvoiceById(id: Int): Result<InvoiceResponse> {
-        return try {
-            val response = api.getInvoiceById(id)
-            if (response.isSuccessful && response.body() != null) {
-                Result.success(response.body()!!)
-            } else {
-                Result.failure(Exception("Error fetching invoice: ${response.code()}"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
+    suspend fun getInvoiceDetail(id: Int): Result<InvoiceResponse> {
+        return runCatching {
+            api.getInvoiceDetail(id)
+        }
+    }
+
+    suspend fun createInvoice(
+        saleId: Int,
+        customerName: String? = null,
+        customerPhone: String? = null,
+        notes: String? = null
+    ): Result<InvoiceResponse> {
+        return runCatching {
+            api.createInvoice(
+                CreateInvoiceRequest(
+                    saleId = saleId,
+                    customerName = customerName,
+                    customerPhone = customerPhone,
+                    notes = notes
+                )
+            )
         }
     }
 
     suspend fun cancelInvoice(id: Int): Result<InvoiceResponse> {
-        return try {
-            val response = api.cancelInvoice(id)
-            if (response.isSuccessful && response.body() != null) {
-                Result.success(response.body()!!)
-            } else {
-                Result.failure(Exception("Error cancelling invoice: ${response.code()}"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
+        return runCatching {
+            api.cancelInvoice(id)
         }
     }
 }

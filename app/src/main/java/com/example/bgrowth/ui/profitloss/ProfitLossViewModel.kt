@@ -22,6 +22,8 @@ class ProfitLossViewModel(
 
     private fun loadData() {
         viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+
             val periodParam = when (_uiState.value.selectedPeriod.lowercase()) {
                 "weekly" -> "week"
                 "monthly" -> "month"
@@ -29,18 +31,31 @@ class ProfitLossViewModel(
             }
 
             val result = repository.getProfitLossReport(periodParam)
-            if (result.isSuccess) {
-                val data = result.getOrNull()
-                val sales = data?.total_revenue?.toDoubleOrNull() ?: 0.0
-                val expenses = data?.total_expenses?.toDoubleOrNull() ?: 0.0
-                val net = data?.net_profit?.toDoubleOrNull() ?: 0.0
+            result.onSuccess { data ->
+                // القراءة بالحقول الصحيحة من ProfitLossResponseDto
+                val sales = data.total_revenue.toDoubleOrNull() ?: 0.0
+                val expenses = data.total_expenses.toDoubleOrNull() ?: 0.0
+                val net = data.net_profit.toDoubleOrNull() ?: (sales - expenses)
+
+                val isDataEmpty = (sales == 0.0 && expenses == 0.0)
+                val margin = if (sales > 0) "%.0f%%".format((net / sales) * 100) else "0%"
 
                 _uiState.update {
                     it.copy(
+                        isLoading = false,
                         totalSales = "%.2f".format(sales),
                         totalExpenses = "%.2f".format(expenses),
                         netProfit = net,
-                        isEmpty = (sales == 0.0 && expenses == 0.0)
+                        profitMargin = margin,
+                        isEmpty = isDataEmpty,
+                        netProfitLabel = if (periodParam == "week") "THIS WEEK" else "THIS MONTH"
+                    )
+                }
+            }.onFailure { error ->
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = error.localizedMessage ?: "Failed to load profit loss report"
                     )
                 }
             }

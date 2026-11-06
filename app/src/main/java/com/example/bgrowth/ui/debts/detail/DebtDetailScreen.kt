@@ -1,5 +1,6 @@
 package com.example.bgrowth.ui.debts.detail
 
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,14 +24,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
-val DarkGreen = Color(0xFF105942)
-val BackgroundColor = Color(0xFFF9F9F9)
-val BorderLight = Color(0xFFE5E5E5)
-val GrayText = Color(0xFF888888)
-val RedText = Color(0xFFD32F2F)
-val OrangeText = Color(0xFFF57C00)
-val WarningBg = Color(0xFFFFF8E1)
-val WarningBorder = Color(0xFFFFE082)
+private val DetailDarkGreen = Color(0xFF105942)
+private val DetailBackgroundColor = Color(0xFFF9F9F9)
+private val DetailBorderLight = Color(0xFFE5E5E5)
+private val DetailGrayText = Color(0xFF888888)
+private val DetailRedText = Color(0xFFD32F2F)
+private val DetailOrangeText = Color(0xFFF57C00)
+private val DetailWarningBg = Color(0xFFFFF8E1)
+private val DetailWarningBorder = Color(0xFFFFE082)
 
 @Composable
 fun DebtDetailScreen(
@@ -54,7 +55,7 @@ fun DebtDetailContent(
     onNavigateBack: () -> Unit
 ) {
     Scaffold(
-        containerColor = BackgroundColor,
+        containerColor = DetailBackgroundColor,
         topBar = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -63,10 +64,10 @@ fun DebtDetailContent(
                     .padding(horizontal = 20.dp, vertical = 24.dp)
             ) {
                 IconButton(onClick = onNavigateBack, modifier = Modifier.size(24.dp)) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = DarkGreen)
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = DetailDarkGreen)
                 }
                 Spacer(modifier = Modifier.width(16.dp))
-                Text("Debt Details", color = DarkGreen, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                Text("Debt Details", color = DetailDarkGreen, fontWeight = FontWeight.Bold, fontSize = 20.sp)
             }
         }
     ) { paddingValues ->
@@ -78,11 +79,10 @@ fun DebtDetailContent(
             contentPadding = PaddingValues(bottom = 24.dp)
         ) {
             item {
-                // Main Info Card
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
-                    border = BorderStroke(1.dp, BorderLight),
+                    border = BorderStroke(1.dp, DetailBorderLight),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Column(modifier = Modifier.padding(20.dp)) {
@@ -100,10 +100,10 @@ fun DebtDetailContent(
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(uiState.partyName, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
                                 Spacer(modifier = Modifier.height(2.dp))
-                                Text(uiState.debtTypeAndDate, fontSize = 12.sp, color = GrayText)
+                                Text(uiState.debtTypeAndDate, fontSize = 12.sp, color = DetailGrayText)
                             }
                             val statusBg = if (uiState.isUnpaid) Color(0xFFFDEBEA) else Color(0xFFFFF3E0)
-                            val statusColor = if (uiState.isUnpaid) RedText else OrangeText
+                            val statusColor = if (uiState.isUnpaid) DetailRedText else DetailOrangeText
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(4.dp))
@@ -116,18 +116,17 @@ fun DebtDetailContent(
 
                         Spacer(modifier = Modifier.height(20.dp))
 
-                        // Progress Section
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Column {
-                                Text("Paid Amount", fontSize = 12.sp, color = GrayText)
-                                Text(uiState.paidAmountText, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = DarkGreen)
+                                Text("Paid Amount", fontSize = 12.sp, color = DetailGrayText)
+                                Text(uiState.paidAmountText, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = DetailDarkGreen)
                             }
                             Column(horizontalAlignment = Alignment.End) {
-                                Text("Remaining Amount", fontSize = 12.sp, color = GrayText)
-                                Text(uiState.remainingAmountText, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = RedText)
+                                Text("Remaining Amount", fontSize = 12.sp, color = DetailGrayText)
+                                Text(uiState.remainingAmountText, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = DetailRedText)
                             }
                         }
 
@@ -139,50 +138,46 @@ fun DebtDetailContent(
                                 .fillMaxWidth()
                                 .height(8.dp)
                                 .clip(RoundedCornerShape(4.dp)),
-                            color = DarkGreen,
+                            color = DetailDarkGreen,
                             trackColor = Color(0xFFE0E0E0)
                         )
-
-
                     }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Warning Message Box (Safe Null Check Fix)
                 if (!uiState.dueWarningMessage.isNullOrEmpty()) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(8.dp))
-                            .background(WarningBg)
-                            .border(1.dp, WarningBorder, RoundedCornerShape(8.dp))
+                            .background(DetailWarningBg)
+                            .border(1.dp, DetailWarningBorder, RoundedCornerShape(8.dp))
                             .padding(horizontal = 12.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             Icons.Outlined.Notifications,
                             contentDescription = "Warning",
-                            tint = OrangeText,
+                            tint = DetailOrangeText,
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = uiState.dueWarningMessage ?: "",
-                            color = OrangeText,
+                            text = uiState.dueWarningMessage,
+                            color = DetailOrangeText,
                             fontSize = 12.sp
                         )
                     }
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
-                // Record Payment Button
                 Button(
                     onClick = onRecordPayment,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = DarkGreen),
+                    colors = ButtonDefaults.buttonColors(containerColor = DetailDarkGreen),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(Icons.Default.Add, contentDescription = null, tint = Color.White)
@@ -202,7 +197,7 @@ fun DebtDetailContent(
                         .fillMaxWidth()
                         .padding(bottom = 8.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
-                    border = BorderStroke(1.dp, BorderLight),
+                    border = BorderStroke(1.dp, DetailBorderLight),
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Row(
@@ -213,15 +208,13 @@ fun DebtDetailContent(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(item.dateAndMethod, fontSize = 13.sp, color = Color.Black)
-                        Text(item.amount, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = DarkGreen)
+                        Text(item.amount, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = DetailDarkGreen)
                     }
                 }
             }
         }
     }
 }
-
-// ============================== Previews (Top-Level) ============================== //
 
 @Preview(showBackground = true, device = "id:pixel_5", name = "1. Partially Paid Debt")
 @Composable
@@ -240,23 +233,6 @@ fun DebtDetailPartiallyPaidPreview() {
         paymentHistory = listOf(
             PaymentHistoryItem(1, "Sep 10 • Cash", "$45.00")
         )
-    )
-    MaterialTheme { DebtDetailContent(uiState = mockUiState, onRecordPayment = {}, onNavigateBack = {}) }
-}
-
-@Preview(showBackground = true, device = "id:pixel_5", name = "2. Unpaid Debt")
-@Composable
-fun DebtDetailUnpaidPreview() {
-    val mockUiState = DebtDetailUiState(
-        partyName = "Mohammed Khalil",
-        initials = "MK",
-        debtTypeAndDate = "Customer Debt • Due Sep 15",
-        totalAmount = "$120.00",
-        paidAmountText = "$0.00",
-        remainingAmountText = "$120.00",
-        progress = 0f,
-        statusText = "Unpaid",
-        isUnpaid = true
     )
     MaterialTheme { DebtDetailContent(uiState = mockUiState, onRecordPayment = {}, onNavigateBack = {}) }
 }

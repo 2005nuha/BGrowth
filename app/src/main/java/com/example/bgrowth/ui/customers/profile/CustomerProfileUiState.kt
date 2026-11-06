@@ -15,5 +15,7 @@ data class CustomerProfileUiState(
     val unpaidDebtsCount: Int = 2,
     val selectedTab: String = "Purchases",
     val tabs: List<String> = listOf("Purchases", "Debts", "Invoices"),
-    val purchases: List<PurchaseItem> = emptyList()
+    val purchases: List<PurchaseItem> = emptyList(),
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null
 )

@@ -3,18 +3,19 @@ package com.example.bgrowth.ui.profitloss
 data class ProfitLossUiState(
     val selectedPeriod: String = "Monthly",
     val periods: List<String> = listOf("Weekly", "Monthly", "Custom"),
-
     val isEmpty: Boolean = false,
     val showCustomDatePicker: Boolean = false,
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null,
 
-    val totalSales: String = "330.00",
-    val salesChange: String = "+12%",
-    val totalExpenses: String = "180.00",
-    val expensesChange: String = "-5%",
+    val totalSales: String = "0.00",
+    val salesChange: String = "+0%",
+    val totalExpenses: String = "0.00",
+    val expensesChange: String = "0%",
 
-    val netProfit: Double = 330.00,
-    val netProfitLabel: String = "SEPTEMBER",
-    val profitMargin: String = "57%",
+    val netProfit: Double = 0.0,
+    val netProfitLabel: String = "THIS MONTH",
+    val profitMargin: String = "0%",
 
     val chartData: List<ChartData> = emptyList(),
     val topExpenses: List<ExpenseCategoryData> = emptyList()

@@ -1,18 +1,17 @@
 package com.example.bgrowth.ui.customers.profile
 
-data class CustomerProfileUiState(
-    val isLoading: Boolean = false,
-    val customerName: String = "",
-    val customerPhone: String = "",
-    val customerAddress: String = "",
-    val selectedTab: String = "Purchases",
-    val purchases: List<PurchaseItem> = emptyList(),
-    val errorMessage: String? = null
-)
+import androidx.lifecycle.ViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
-data class PurchaseItem(
-    val id: Int,
-    val name: String,
-    val category: String,
-    val price: String
-)
+class CustomerProfileViewModel : ViewModel() {
+
+    private val _uiState = MutableStateFlow(CustomerProfileUiState())
+    val uiState: StateFlow<CustomerProfileUiState> = _uiState.asStateFlow()
+
+    fun onTabSelected(tabName: String) {
+        _uiState.update { it.copy(selectedTab = tabName) }
+    }
+}

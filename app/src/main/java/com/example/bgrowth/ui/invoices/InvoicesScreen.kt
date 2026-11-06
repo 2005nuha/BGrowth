@@ -148,7 +148,7 @@ fun InvoicesContent(
                         .padding(horizontal = 20.dp),
                     contentPadding = PaddingValues(bottom = 80.dp)
                 ) {
-                    items(uiState.invoices) { invoice ->
+                    items(uiState.invoices, key = { it.id }) { invoice ->
                         InvoiceCard(invoice = invoice, onClick = { onInvoiceClick(invoice.id) })
                     }
                 }

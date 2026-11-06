@@ -22,18 +22,27 @@ class DebtDetailViewModel(
 
             repository.getDebtDetail(debtId)
                 .onSuccess { dto ->
+                    val initials = dto.party_name.trim()
+                        .split(" ")
+                        .take(2)
+                        .mapNotNull { it.firstOrNull()?.uppercaseChar() }
+                        .joinToString("")
+                        .ifEmpty { "D" }
+
+                    val isUnpaidStatus = dto.status == "UNPAID"
+
                     _uiState.update {
                         it.copy(
                             isLoading = false,
                             debtId = dto.id,
                             partyName = dto.party_name,
-                            originalAmount = "$${dto.original_amount}",
-                            paidAmount = "$${dto.paid_amount}",
-                            remainingAmount = "$${dto.remaining_amount}",
-                            status = dto.status,
-                            debtType = dto.debt_type,
-                            dueDate = dto.due_date ?: "N/A",
-                            notes = dto.notes
+                            initials = initials,
+                            debtTypeAndDate = "${dto.debt_type} • Due ${dto.due_date ?: "N/A"}",
+                            totalAmount = "$${dto.original_amount}",
+                            paidAmountText = "$${dto.paid_amount}",
+                            remainingAmountText = "$${dto.remaining_amount}",
+                            statusText = dto.status,
+                            isUnpaid = isUnpaidStatus
                         )
                     }
                 }
@@ -48,26 +57,7 @@ class DebtDetailViewModel(
         }
     }
 
-    fun onRecordPayment(debtId: Int, amount: String, note: String, onSuccess: () -> Unit) {
-        if (amount.isBlank()) return
-
-        viewModelScope.launch {
-            _uiState.update { it.copy(isSavingPayment = true) }
-
-            repository.addPayment(debtId, amount, note)
-                .onSuccess {
-                    _uiState.update { it.copy(isSavingPayment = false) }
-                    loadDebtDetail(debtId)
-                    onSuccess()
-                }
-                .onFailure { error ->
-                    _uiState.update {
-                        it.copy(
-                            isSavingPayment = false,
-                            errorMessage = error.message ?: "Failed to record payment"
-                        )
-                    }
-                }
-        }
+    fun onRecordPayment() {
+        // الإجراء الخاص بتسجيل الدفع
     }
 }

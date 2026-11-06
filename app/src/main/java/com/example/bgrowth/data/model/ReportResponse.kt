@@ -1,20 +1,22 @@
 package com.example.bgrowth.data.model
 
+import com.google.gson.annotations.SerializedName
+
 data class ReportSummaryResponse(
-    val total_sales: String,
-    val total_expenses: String,
-    val net_profit: String,
-    val total_receivables: String,
-    val total_payables: String
+    @SerializedName("total_sales") val totalSales: String?,
+    @SerializedName("total_expenses") val totalExpenses: String?,
+    @SerializedName("net_profit") val netProfit: String?,
+    @SerializedName("total_receivables") val totalReceivables: String?,
+    @SerializedName("total_payables") val totalPayables: String?
 )
 
 data class ChartDataPoint(
-    val label: String,
-    val sales: Double,
-    val expenses: Double
+    @SerializedName("label") val label: String,
+    @SerializedName("sales") val sales: Double,
+    @SerializedName("expenses") val expenses: Double
 )
 
 data class ReportResponse(
-    val summary: ReportSummaryResponse,
-    val chart_data: List<ChartDataPoint>
+    @SerializedName("summary") val summary: ReportSummaryResponse,
+    @SerializedName("chart_data") val chartData: List<ChartDataPoint> = emptyList()
 )

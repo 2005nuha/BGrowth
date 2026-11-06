@@ -17,32 +17,43 @@ class DebtsViewModel(
     val uiState: StateFlow<DebtsUiState> = _uiState.asStateFlow()
 
     init {
-        fetchDebts()
+        loadDebts()
     }
 
-    fun fetchDebts(debtType: String? = null, status: String? = null) {
+    fun onTabSelected(tab: String) {
+        _uiState.update { it.copy(selectedTab = tab) }
+        loadDebts()
+    }
+
+    fun loadDebts() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-            repository.getDebts(debtType = debtType, status = status)
-                .onSuccess { dtoList ->
-                    val debtItems = dtoList.map { dto ->
-                        val isReceivable = dto.debt_type == "RECEIVABLE"
-                        DebtItem(
+            repository.getDebts()
+                .onSuccess { debtsList ->
+                    val mappedItems = debtsList.map { dto ->
+                        val initials = dto.party_name.trim()
+                            .split(" ")
+                            .take(2)
+                            .mapNotNull { it.firstOrNull()?.uppercaseChar() }
+                            .joinToString("")
+                            .ifEmpty { "D" }
+
+                        DebtItemUiState(
                             id = dto.id,
-                            title = dto.party_name,
-                            subtitle = if (isReceivable) "You owe" else "Owes you",
+                            name = dto.party_name,
+                            initials = initials,
+                            dueDate = dto.due_date ?: "N/A",
                             amount = "$${dto.remaining_amount}",
-                            dueDate = dto.due_date ?: "No due date",
-                            isPaid = dto.status == "PAID"
+                            status = dto.status,
+                            isUnpaid = dto.status == "UNPAID"
                         )
                     }
 
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            debts = debtItems,
-                            isEmpty = debtItems.isEmpty()
+                            debtsList = mappedItems
                         )
                     }
                 }
@@ -55,15 +66,5 @@ class DebtsViewModel(
                     }
                 }
         }
-    }
-
-    fun onTabSelected(tabIndex: Int) {
-        val selectedType = when (tabIndex) {
-            1 -> "RECEIVABLE"
-            2 -> "PAYABLE"
-            else -> null
-        }
-        _uiState.update { it.copy(selectedTabIndex = tabIndex) }
-        fetchDebts(debtType = selectedType)
     }
 }

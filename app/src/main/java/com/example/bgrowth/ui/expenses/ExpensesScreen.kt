@@ -1,6 +1,5 @@
 package com.example.bgrowth.ui.expenses
 
-
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,6 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
@@ -36,7 +36,8 @@ val GrayText = Color(0xFF888888)
 @Composable
 fun ExpensesScreen(
     viewModel: ExpensesViewModel = viewModel(),
-    onNavigateBack: () -> Unit = {}
+    onNavigateBack: () -> Unit = {},
+    onAddExpenseClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -47,8 +48,9 @@ fun ExpensesScreen(
         onCategorySelected = viewModel::onCategoryFilterSelected,
         onNavigateBack = onNavigateBack,
         onSettingsClick = { /* Handle settings */ },
-        onEditExpense = { expense -> /* إضافة كود الانتقال لشاشة التعديل هنا لاحقاً */ },
-        onDeleteExpense = { expense -> /* إضافة كود دالة الحذف هنا لاحقاً */ }
+        onEditExpense = { expense -> /* إضافة كود التعديل لاحقاً */ },
+        onDeleteExpense = { expense -> /* إضافة كود الحذف لاحقاً */ },
+        onAddExpenseClick = onAddExpenseClick
     )
 }
 
@@ -62,7 +64,8 @@ fun ExpensesContent(
     onNavigateBack: () -> Unit,
     onSettingsClick: () -> Unit,
     onEditExpense: (ExpenseItem) -> Unit,
-    onDeleteExpense: (ExpenseItem) -> Unit
+    onDeleteExpense: (ExpenseItem) -> Unit,
+    onAddExpenseClick: () -> Unit
 ) {
     Scaffold(
         containerColor = BackgroundColor,
@@ -129,126 +132,167 @@ fun ExpensesContent(
                     }
                 }
             }
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onAddExpenseClick,
+                containerColor = DarkGreen,
+                contentColor = Color.White
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add Expense")
+            }
         }
     ) { paddingValues ->
-        LazyColumn(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 20.dp),
-            contentPadding = PaddingValues(bottom = 24.dp)
         ) {
-            item {
-                // Date Filters
-                Text(
-                    text = "Date",
-                    color = GrayText,
-                    fontSize = 15.sp,
-                    modifier = Modifier.padding(bottom = 8.dp, top = 8.dp)
+            if (uiState.isLoading) {
+                CircularProgressIndicator(
+                    color = DarkGreen,
+                    modifier = Modifier.align(Alignment.Center)
                 )
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(uiState.dateOptions) { option ->
-                        CustomChip(
-                            text = option,
-                            selected = uiState.selectedDate == option,
-                            onClick = { onDateSelected(option) }
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Category Filters
+            } else if (uiState.errorMessage != null) {
                 Text(
-                    text = "Category",
-                    color = GrayText,
-                    fontSize = 15.sp,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    text = uiState.errorMessage,
+                    color = RedText,
+                    fontSize = 14.sp,
+                    modifier = Modifier.align(Alignment.Center)
                 )
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(uiState.categoryOptions) { option ->
-                        CustomChip(
-                            text = option,
-                            selected = uiState.selectedCategory == option,
-                            onClick = { onCategorySelected(option) }
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Summary Cards
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-                    border = BorderStroke(1.dp, BorderLight),
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.fillMaxWidth()
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 20.dp),
+                    contentPadding = PaddingValues(bottom = 80.dp)
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 20.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text("Total expenses", color = GrayText, fontSize = 13.sp)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text("$${String.format("%.2f", uiState.totalExpenses)}", color = DarkGreen, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        }
-                        Box(
-                            modifier = Modifier
-                                .height(40.dp)
-                                .width(1.dp)
-                                .background(BorderLight)
-                        )
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text("Avg.expense", color = GrayText, fontSize = 13.sp)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text("$${String.format("%.2f", uiState.avgExpense)}", color = DarkGreen, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
-            // Expense History List
-            uiState.expenseGroups.forEach { group ->
-                item {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    item {
+                        // Date Filters
                         Text(
-                            text = group.dateHeader,
-                            fontWeight = FontWeight.Bold,
+                            text = "Date",
+                            color = GrayText,
                             fontSize = 15.sp,
-                            color = Color.Black
+                            modifier = Modifier.padding(bottom = 8.dp, top = 8.dp)
                         )
-                        Text(
-                            text = group.totalAmount,
-                            color = RedText,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 14.sp
-                        )
-                    }
-                }
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            items(uiState.dateOptions) { option ->
+                                CustomChip(
+                                    text = option,
+                                    selected = uiState.selectedDate == option,
+                                    onClick = { onDateSelected(option) }
+                                )
+                            }
+                        }
 
-                items(group.items) { item ->
-                    ExpenseItemCard(
-                        item = item,
-                        onEditClick = { onEditExpense(item) },
-                        onDeleteClick = { onDeleteExpense(item) }
-                    )
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Category Filters
+                        Text(
+                            text = "Category",
+                            color = GrayText,
+                            fontSize = 15.sp,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            items(uiState.categoryOptions) { option ->
+                                CustomChip(
+                                    text = option,
+                                    selected = uiState.selectedCategory == option,
+                                    onClick = { onCategorySelected(option) }
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        // Summary Cards
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                            border = BorderStroke(1.dp, BorderLight),
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 20.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text("Total expenses", color = GrayText, fontSize = 13.sp)
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text("$${String.format("%.2f", uiState.totalExpenses)}", color = DarkGreen, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                                }
+                                Box(
+                                    modifier = Modifier
+                                        .height(40.dp)
+                                        .width(1.dp)
+                                        .background(BorderLight)
+                                )
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text("Avg.expense", color = GrayText, fontSize = 13.sp)
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text("$${String.format("%.2f", uiState.avgExpense)}", color = DarkGreen, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+
+                    // Expense History List
+                    if (uiState.expenseGroups.isEmpty()) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 40.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("No expenses recorded yet", color = GrayText, fontSize = 14.sp)
+                            }
+                        }
+                    } else {
+                        uiState.expenseGroups.forEach { group ->
+                            item {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 12.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = group.dateHeader,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 15.sp,
+                                        color = Color.Black
+                                    )
+                                    Text(
+                                        text = group.totalAmount,
+                                        color = RedText,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 14.sp
+                                    )
+                                }
+                            }
+
+                            items(group.items, key = { it.id }) { item ->
+                                ExpenseItemCard(
+                                    item = item,
+                                    onEditClick = { onEditExpense(item) },
+                                    onDeleteClick = { onDeleteExpense(item) }
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -302,22 +346,20 @@ fun ExpenseItemCard(
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = item.title,
+                    text = item.category,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 15.sp,
                     color = Color.Black
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = item.subtitle,
+                    text = "${item.description} • ${item.date}",
                     color = GrayText,
                     fontSize = 12.sp
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
-                // أزرار التعديل والحذف الجديدة
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // زر التعديل (Edit)
                     Row(
                         modifier = Modifier
                             .clip(RoundedCornerShape(4.dp))
@@ -330,7 +372,6 @@ fun ExpenseItemCard(
                         Text("Edit", color = DarkGreen, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                     }
 
-                    // زر الحذف (Delete)
                     Row(
                         modifier = Modifier
                             .clip(RoundedCornerShape(4.dp))
@@ -367,18 +408,10 @@ fun ExpensesScreenPreview() {
         avgExpense = 22.50,
         expenseGroups = listOf(
             ExpenseGroup(
-                dateHeader = "Today ,sep7",
+                dateHeader = "Today, Sep 7",
                 totalAmount = "-$45.00",
                 items = listOf(
-                    ExpenseItem("Electricity Bill", "Utilities · Today, 9:15 AM", "-$45.00")
-                )
-            ),
-            ExpenseGroup(
-                dateHeader = "Yesterday ,sep6",
-                totalAmount = "-$120.00",
-                items = listOf(
-                    ExpenseItem("Packaging Supplies", "Supplies · Yesterday", "-$120.00"),
-                    ExpenseItem("Delivery Fuel", "Transport · Yesterday", "-$16.00")
+                    ExpenseItem(1, "Utilities", "Electricity Bill", "-$45.00", "Today, 9:15 AM")
                 )
             )
         )
@@ -393,67 +426,8 @@ fun ExpensesScreenPreview() {
             onNavigateBack = {},
             onSettingsClick = {},
             onEditExpense = {},
-            onDeleteExpense = {}
+            onDeleteExpense = {},
+            onAddExpenseClick = {}
         )
     }
-}
-
-@Preview(showBackground = true, device = "id:pixel_5", name = "2. Filtered: Today")
-@Composable
-fun ExpensesTodayPreview() {
-    val mockUiState = ExpensesUiState(
-        searchQuery = "",
-        selectedDate = "Today", // هنا تغير الوقت
-        selectedCategory = "All",
-        dateOptions = listOf("This week", "Today", "This month"),
-        categoryOptions = listOf("All", "Rent", "Supplies", "Utilities"),
-        totalExpenses = 45.00,
-        avgExpense = 45.00,
-        expenseGroups = listOf(
-            ExpenseGroup(
-                dateHeader = "Today, Sep 7",
-                totalAmount = "-$45.00",
-                items = listOf(ExpenseItem("Electricity Bill", "Utilities · Today, 9:15 AM", "-$45.00"))
-            )
-        )
-    )
-    MaterialTheme { ExpensesContent(uiState = mockUiState, onSearchQueryChange = {}, onDateSelected = {}, onCategorySelected = {}, onNavigateBack = {}, onSettingsClick = {}, onEditExpense = {}, onDeleteExpense = {}) }
-}
-
-@Preview(showBackground = true, device = "id:pixel_5", name = "3. Filtered: Rent")
-@Composable
-fun ExpensesRentPreview() {
-    val mockUiState = ExpensesUiState(
-        searchQuery = "",
-        selectedDate = "This month",
-        selectedCategory = "Rent", // هنا تغير الصنف
-        dateOptions = listOf("This week", "Today", "This month"),
-        categoryOptions = listOf("All", "Rent", "Supplies", "Utilities"),
-        totalExpenses = 500.00,
-        avgExpense = 500.00,
-        expenseGroups = listOf(
-            ExpenseGroup(
-                dateHeader = "Sep 1",
-                totalAmount = "-$500.00",
-                items = listOf(ExpenseItem("Shop Rent", "Rent · Sep 1", "-$500.00"))
-            )
-        )
-    )
-    MaterialTheme { ExpensesContent(uiState = mockUiState, onSearchQueryChange = {}, onDateSelected = {}, onCategorySelected = {}, onNavigateBack = {}, onSettingsClick = {}, onEditExpense = {}, onDeleteExpense = {}) }
-}
-
-@Preview(showBackground = true, device = "id:pixel_5", name = "4. Empty Results")
-@Composable
-fun ExpensesEmptyPreview() {
-    val mockUiState = ExpensesUiState(
-        searchQuery = "",
-        selectedDate = "Today",
-        selectedCategory = "Rent",
-        dateOptions = listOf("This week", "Today", "This month"),
-        categoryOptions = listOf("All", "Rent", "Supplies", "Utilities"),
-        totalExpenses = 0.00,
-        avgExpense = 0.00,
-        expenseGroups = emptyList()
-    )
-    MaterialTheme { ExpensesContent(uiState = mockUiState, onSearchQueryChange = {}, onDateSelected = {}, onCategorySelected = {}, onNavigateBack = {}, onSettingsClick = {}, onEditExpense = {}, onDeleteExpense = {}) }
 }

@@ -27,18 +27,19 @@ class InvoicesViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-            val result = repository.getInvoices()
-            if (result.isSuccess) {
-                allInvoices = result.getOrDefault(emptyList())
-                applySearchAndFilter(_uiState.value.searchQuery)
-            } else {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = result.exceptionOrNull()?.message ?: "Failed to load invoices"
-                    )
+            repository.getInvoices()
+                .onSuccess { responseList ->
+                    allInvoices = responseList
+                    applySearchAndFilter(_uiState.value.searchQuery)
                 }
-            }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = error.localizedMessage ?: "Failed to load invoices"
+                        )
+                    }
+                }
         }
     }
 
@@ -51,25 +52,24 @@ class InvoicesViewModel(
         val filtered = if (query.isBlank()) {
             allInvoices
         } else {
-            allInvoices.filter {
-                it.customer_name.contains(query, ignoreCase = true) ||
-                        it.invoice_number.contains(query, ignoreCase = true)
+            allInvoices.filter { invoice ->
+                (invoice.customerName?.contains(query, ignoreCase = true) == true) ||
+                        (invoice.invoiceNumber.contains(query, ignoreCase = true))
             }
         }
 
         val mappedItems = filtered.map { invoice ->
             val status = when (invoice.status.uppercase()) {
-                "CANCELLED" -> InvoiceStatus.CANCELED
-                "ISSUED", "PAID" -> InvoiceStatus.PAID
+                "CANCELLED", "CANCELED" -> InvoiceStatus.CANCELED
                 else -> InvoiceStatus.PENDING
             }
 
             InvoiceItem(
-                id = invoice.id, // تم التعديل لتمرير הـ ID الرقمي الصحيح للملاحة والتفاصيل
-                invoiceNumber = invoice.invoice_number,
-                customerName = invoice.customer_name.ifEmpty { "Customer #${invoice.id}" },
-                date = invoice.issued_at.take(10),
-                amount = "$${invoice.total}",
+                id = invoice.id,
+                invoiceNumber = invoice.invoiceNumber,
+                customerName = invoice.customerName ?: "N/A",
+                date = invoice.issuedAt ?: "",
+                amount = invoice.total?.let { "$$it" } ?: "$0.00",
                 status = status
             )
         }

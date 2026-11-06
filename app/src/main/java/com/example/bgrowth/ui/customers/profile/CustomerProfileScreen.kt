@@ -22,7 +22,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.bgrowth.ui.customers.profile.CustomerProfileViewModel
 
 val DarkGreen = Color(0xFF105942)
 val BackgroundColor = Color(0xFFF9F9F9)
@@ -72,7 +71,8 @@ fun CustomerProfileContent(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 24.dp)        ) {
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 24.dp)
+        ) {
             item {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -235,7 +235,6 @@ fun PurchaseItemCard(purchase: PurchaseItem) {
         }
     }
 }
-
 
 @Preview(showBackground = true, device = "id:pixel_5", name = "Customer Profile Screen")
 @Composable

@@ -5,12 +5,12 @@ data class ReportsUiState(
     val showPeriodSelector: Boolean = false,
     val bottomSheetSelectedPeriod: ReportPeriod = ReportPeriod.THIS_WEEK,
     val bottomSheetMonth: String = "September 2026",
-    val totalSales: String = "$3,240.00",
-    val totalExpenses: String = "$1,390.00",
-    val netProfit: String = "$1,850.00",
-    val owedToMe: String = "$285.00",
-    val iOwe: String = "$150.00",
-    val bestMonthText: String = "September — $3,240.00 in sales",
+    val totalSales: String = "\$0.00",
+    val totalExpenses: String = "\$0.00",
+    val netProfit: String = "\$0.00",
+    val owedToMe: String = "\$0.00",
+    val iOwe: String = "\$0.00",
+    val bestMonthText: String = "September — \$0.00 in sales",
     val isLoading: Boolean = false,
     val errorMessage: String? = null
 )

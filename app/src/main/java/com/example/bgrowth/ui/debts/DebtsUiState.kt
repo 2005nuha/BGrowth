@@ -1,18 +1,18 @@
 package com.example.bgrowth.ui.debts
 
-data class DebtsUiState(
-    val isLoading: Boolean = false,
-    val isEmpty: Boolean = false,
-    val selectedTabIndex: Int = 0,
-    val debts: List<DebtItem> = emptyList(),
-    val errorMessage: String? = null
+data class DebtItemUiState(
+    val id: Int = 0,
+    val name: String = "",
+    val initials: String = "",
+    val dueDate: String = "",
+    val amount: String = "",
+    val status: String = "",
+    val isUnpaid: Boolean = true
 )
 
-data class DebtItem(
-    val id: Int,
-    val title: String,
-    val subtitle: String,
-    val amount: String,
-    val dueDate: String,
-    val isPaid: Boolean
+data class DebtsUiState(
+    val isLoading: Boolean = false,
+    val selectedTab: String = "Owed to Me",
+    val debtsList: List<DebtItemUiState> = emptyList(),
+    val errorMessage: String? = null
 )

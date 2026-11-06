@@ -18,8 +18,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.bgrowth.ui.customers.add.AddCustomerUiState
-import com.example.bgrowth.ui.customers.add.AddCustomerViewModel
 
 val DarkGreen = Color(0xFF105942)
 val BackgroundColor = Color(0xFFF9F9F9)
@@ -38,7 +36,7 @@ fun AddCustomerScreen(
         onFullNameChange = viewModel::onFullNameChange,
         onPhoneNumberChange = viewModel::onPhoneNumberChange,
         onNotesChange = viewModel::onNotesChange,
-        onSaveCustomer = viewModel::onSaveCustomer,
+        onSaveCustomer = { viewModel.onSaveCustomer(onSuccess = onNavigateBack) },
         onNavigateBack = onNavigateBack
     )
 }
@@ -165,7 +163,6 @@ fun AddCustomerContent(
         }
     }
 }
-
 
 @Preview(showBackground = true, device = "id:pixel_5", name = "Add Customer Screen")
 @Composable

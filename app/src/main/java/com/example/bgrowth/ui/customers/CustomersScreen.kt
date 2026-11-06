@@ -1,6 +1,5 @@
 package com.example.bgrowth.ui.customers
 
-
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -36,14 +35,16 @@ val GrayText = Color(0xFF888888)
 @Composable
 fun CustomersScreen(
     viewModel: CustomersViewModel = viewModel(),
-    onNavigateBack: () -> Unit = {}
+    onNavigateBack: () -> Unit = {},
+    onAddCustomerClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     CustomersContent(
         uiState = uiState,
         onSearchQueryChange = viewModel::onSearchQueryChange,
-        onNavigateBack = onNavigateBack
+        onNavigateBack = onNavigateBack,
+        onAddCustomerClick = onAddCustomerClick
     )
 }
 
@@ -52,13 +53,14 @@ fun CustomersScreen(
 fun CustomersContent(
     uiState: CustomersUiState,
     onSearchQueryChange: (String) -> Unit,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onAddCustomerClick: () -> Unit
 ) {
     Scaffold(
         containerColor = BackgroundColor,
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { /* التنقل لشاشة الإضافة لاحقاً */ },
+                onClick = onAddCustomerClick,
                 containerColor = DarkGreen,
                 shape = CircleShape
             ) {
@@ -89,7 +91,11 @@ fun CustomersContent(
                 )
             }
 
-            if (uiState.isEmpty) {
+            if (uiState.isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = DarkGreen)
+                }
+            } else if (uiState.isEmpty) {
                 EmptyCustomersView()
             } else {
                 // مربع البحث وزر الإعدادات
@@ -137,7 +143,7 @@ fun CustomersContent(
                     contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 80.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(uiState.customers) { customer ->
+                    items(uiState.customers, key = { it.id }) { customer ->
                         CustomerItemCard(customer = customer)
                     }
                 }
@@ -180,12 +186,12 @@ fun CustomerItemCard(customer: CustomerItem) {
                 Text(customer.phone, fontSize = 12.sp, color = GrayText)
             }
 
-            // الديون
+            // العنوان أو النص المؤشر
             Text(
-                text = customer.balance,
-                fontWeight = FontWeight.SemiBold,
+                text = customer.dueText,
+                fontWeight = FontWeight.Medium,
                 fontSize = 12.sp,
-                color = if (customer.hasBalance) RedText else Color.LightGray
+                color = GrayText
             )
         }
     }
@@ -221,7 +227,6 @@ fun EmptyCustomersView() {
     }
 }
 
-
 @Preview(showBackground = true, device = "id:pixel_5", name = "1. Customers List")
 @Composable
 fun CustomersListPreview() {
@@ -233,12 +238,12 @@ fun CustomersListPreview() {
             CustomerItem(3, "RN", "Rana Nasser", "059 123 4567", "$120.00 due", true)
         )
     )
-    MaterialTheme { CustomersContent(uiState = mockUiState, onSearchQueryChange = {}, onNavigateBack = {}) }
+    MaterialTheme { CustomersContent(uiState = mockUiState, onSearchQueryChange = {}, onNavigateBack = {}, onAddCustomerClick = {}) }
 }
 
 @Preview(showBackground = true, device = "id:pixel_5", name = "2. Customers Empty")
 @Composable
 fun CustomersEmptyPreview() {
     val mockUiState = CustomersUiState(isEmpty = true)
-    MaterialTheme { CustomersContent(uiState = mockUiState, onSearchQueryChange = {}, onNavigateBack = {}) }
+    MaterialTheme { CustomersContent(uiState = mockUiState, onSearchQueryChange = {}, onNavigateBack = {}, onAddCustomerClick = {}) }
 }

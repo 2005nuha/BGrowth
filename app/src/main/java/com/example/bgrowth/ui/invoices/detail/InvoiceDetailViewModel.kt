@@ -3,6 +3,7 @@ package com.example.bgrowth.ui.invoices.detail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.bgrowth.data.repository.InvoiceRepository
+import com.example.bgrowth.ui.invoices.InvoiceStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,43 +17,46 @@ class InvoiceDetailViewModel(
     private val _uiState = MutableStateFlow(InvoiceDetailUiState())
     val uiState: StateFlow<InvoiceDetailUiState> = _uiState.asStateFlow()
 
-    private var currentInvoiceNumericId: Int = 0
-
     fun loadInvoiceDetail(invoiceId: Int) {
-        currentInvoiceNumericId = invoiceId
         viewModelScope.launch {
-            val result = repository.getInvoiceById(invoiceId)
-            if (result.isSuccess) {
-                val invoice = result.getOrNull()
-                if (invoice != null) {
-                    val status = when (invoice.status.uppercase()) {
-                        "CANCELLED" -> InvoiceStatus.CANCELED
-                        "PAID" -> InvoiceStatus.PAID
+            _uiState.update { it.copy(isLoading = true, errorMessage = null, invoiceNumericId = invoiceId) }
+
+            repository.getInvoiceDetail(invoiceId)
+                .onSuccess { response ->
+                    val mappedItems = response.items.map { dto ->
+                        InvoiceItemLine(
+                            name = dto.productName,
+                            qty = dto.quantity,
+                            total = dto.lineTotal
+                        )
+                    }
+
+                    val mappedStatus = when (response.status.uppercase()) {
+                        "CANCELLED", "CANCELED" -> InvoiceStatus.CANCELED
                         else -> InvoiceStatus.PENDING
                     }
 
-                    val itemsLines = invoice.items.map { item ->
-                        InvoiceItemLine(
-                            name = item.product_name,
-                            qty = item.quantity,
-                            total = "$${item.line_total}"
-                        )
-                    }
-
-                    _uiState.update { state ->
-                        state.copy(
-                            invoiceId = invoice.invoice_number,
-                            date = invoice.issued_at.take(10),
-                            status = status,
-                            billToName = invoice.customer_name.ifEmpty { "N/A" },
-                            billToPhone = invoice.customer_phone.ifEmpty { "N/A" },
-                            items = itemsLines,
-                            totalAmount = "$${invoice.total}",
-                            cancelDate = if (status == InvoiceStatus.CANCELED) invoice.issued_at.take(10) else null
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            invoiceId = response.invoiceNumber,
+                            date = response.issuedAt ?: "",
+                            status = mappedStatus,
+                            billToName = response.customerName ?: "N/A",
+                            billToPhone = response.customerPhone ?: "N/A",
+                            totalAmount = response.total?.let { t -> "$$t" } ?: "$0.00",
+                            items = mappedItems
                         )
                     }
                 }
-            }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = error.localizedMessage ?: "Failed to load invoice detail"
+                        )
+                    }
+                }
         }
     }
 
@@ -61,26 +65,27 @@ class InvoiceDetailViewModel(
     }
 
     fun onConfirmCancel() {
-        if (currentInvoiceNumericId == 0) return
+        val currentId = _uiState.value.invoiceNumericId
+        if (currentId == 0) return
 
         viewModelScope.launch {
-            val result = repository.cancelInvoice(currentInvoiceNumericId)
-            if (result.isSuccess) {
-                val invoice = result.getOrNull()
-                _uiState.update {
-                    it.copy(
-                        status = InvoiceStatus.CANCELED,
-                        showCancelDialog = false,
-                        cancelDate = invoice?.issued_at?.take(10) ?: "Today"
-                    )
+            _uiState.update { it.copy(isLoading = true, showCancelDialog = false) }
+            repository.cancelInvoice(currentId)
+                .onSuccess {
+                    loadInvoiceDetail(currentId)
                 }
-            } else {
-                _uiState.update { it.copy(showCancelDialog = false) }
-            }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = error.localizedMessage ?: "Failed to cancel invoice"
+                        )
+                    }
+                }
         }
     }
 
     fun onMarkAsPaid() {
-        _uiState.update { it.copy(status = InvoiceStatus.PAID) }
+        // يمكنكِ إضافة دالة تحديث الحالة إذا كانت مدعومة في الباك إند
     }
 }

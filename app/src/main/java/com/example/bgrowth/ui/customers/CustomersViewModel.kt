@@ -27,7 +27,7 @@ class CustomersViewModel(
             repository.getCustomers(query)
                 .onSuccess { dtoList ->
                     val customerItems = dtoList.map { dto ->
-                        // استخراج أول حرفين للـ Initials
+                        // استخراج أول حرفين من اسم العميل للـ Initials
                         val initials = dto.name.trim()
                             .split(" ")
                             .take(2)
@@ -39,7 +39,7 @@ class CustomersViewModel(
                             id = dto.id,
                             initials = initials,
                             name = dto.name,
-                            phone = dto.phone.ifBlank { "No phone number" },
+                            phone = if (dto.phone.isNotBlank()) dto.phone else "No phone number",
                             dueText = if (dto.address.isNotBlank()) dto.address else "No address",
                             hasDebt = false
                         )
@@ -57,7 +57,7 @@ class CustomersViewModel(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = error.message ?: "Failed to load customers"
+                            errorMessage = error.localizedMessage ?: "Failed to load customers"
                         )
                     }
                 }

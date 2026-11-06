@@ -10,5 +10,7 @@ data class CustomerSelectionItem(
 data class SelectCustomerUiState(
     val searchQuery: String = "",
     val customers: List<CustomerSelectionItem> = emptyList(),
-    val selectedCustomerId: String? = null
+    val selectedCustomerId: String? = null,
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null
 )

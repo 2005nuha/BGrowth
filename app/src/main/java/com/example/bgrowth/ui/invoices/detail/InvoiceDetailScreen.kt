@@ -23,7 +23,6 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -86,189 +85,174 @@ fun InvoiceDetailContent(
             }
         }
     ) { paddingValues ->
-        LazyColumn(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 20.dp),
-            contentPadding = PaddingValues(bottom = 24.dp)
         ) {
-            item {
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        border = BorderStroke(1.dp, BorderLight),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(20.dp)) {
-                            Row(
+            if (uiState.isLoading) {
+                CircularProgressIndicator(color = DarkGreen, modifier = Modifier.align(Alignment.Center))
+            } else if (uiState.errorMessage != null) {
+                Text(
+                    text = uiState.errorMessage,
+                    color = RedText,
+                    fontSize = 14.sp,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 20.dp),
+                    contentPadding = PaddingValues(bottom = 24.dp)
+                ) {
+                    item {
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            Card(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.Top
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                border = BorderStroke(1.dp, BorderLight),
+                                shape = RoundedCornerShape(12.dp)
                             ) {
-                                Column {
-                                    Text("BGrowth", color = DarkGreen, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text("Ahmad's Coffee Shop", color = GrayText, fontSize = 12.sp)
-                                }
-                                Column(horizontalAlignment = Alignment.End) {
-                                    Text(uiState.invoiceId, color = GrayText, fontSize = 12.sp)
-                                    Text(uiState.date, color = GrayText, fontSize = 12.sp)
+                                Column(modifier = Modifier.padding(20.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.Top
+                                    ) {
+                                        Column {
+                                            Text("BGrowth", color = DarkGreen, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                                        }
+                                        Column(horizontalAlignment = Alignment.End) {
+                                            Text(uiState.invoiceId, color = GrayText, fontSize = 12.sp)
+                                            Text(uiState.date, color = GrayText, fontSize = 12.sp)
+                                            Spacer(modifier = Modifier.height(4.dp))
+
+                                            val statusColor = if (uiState.status == InvoiceStatus.PENDING) OrangeText else RedText
+                                            Text(
+                                                uiState.status.name.lowercase().replaceFirstChar { it.uppercase() },
+                                                color = statusColor,
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(24.dp))
+
+                                    Text("Bill To", color = GrayText, fontSize = 12.sp)
                                     Spacer(modifier = Modifier.height(4.dp))
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(uiState.billToName, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color.Black)
+                                        Text(uiState.billToPhone, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color.Black)
+                                    }
 
-                                    val statusColor = if (uiState.status == InvoiceStatus.PENDING) OrangeText else GrayText
-                                    Text(uiState.status.name.lowercase().replaceFirstChar { it.uppercase() }, color = statusColor, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    HorizontalDivider(color = BorderLight)
+                                    Spacer(modifier = Modifier.height(16.dp))
+
+                                    Row(modifier = Modifier.fillMaxWidth()) {
+                                        Text("ITEM", color = GrayText, fontSize = 10.sp, modifier = Modifier.weight(2f))
+                                        Text("QTY", color = GrayText, fontSize = 10.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
+                                        Text("TOTAL", color = GrayText, fontSize = 10.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
+                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    uiState.items.forEach { item ->
+                                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                            Text(item.name, color = Color.Black, fontSize = 12.sp, modifier = Modifier.weight(2f))
+                                            Text(item.qty.toString(), color = Color.Black, fontSize = 12.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
+                                            Text(item.total, color = Color.Black, fontSize = 12.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
+                                        }
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                    }
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    HorizontalDivider(color = BorderLight)
+                                    Spacer(modifier = Modifier.height(16.dp))
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text("Total", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
+                                        Text(uiState.totalAmount, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = DarkGreen)
+                                    }
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(24.dp))
-
-                            Text("Bill To", color = GrayText, fontSize = 12.sp)
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(uiState.billToName, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color.Black)
-                                Text(uiState.billToPhone, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color.Black)
-                            }
-
-                            Spacer(modifier = Modifier.height(16.dp))
-                            HorizontalDivider(color = BorderLight)
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            Row(modifier = Modifier.fillMaxWidth()) {
-                                Text("ITEM", color = GrayText, fontSize = 10.sp, modifier = Modifier.weight(2f))
-                                Text("QTY", color = GrayText, fontSize = 10.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
-                                Text("TOTAL", color = GrayText, fontSize = 10.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            uiState.items.forEach { item ->
-                                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                    Text(item.name, color = Color.Black, fontSize = 12.sp, modifier = Modifier.weight(2f))
-                                    Text(item.qty.toString(), color = Color.Black, fontSize = 12.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
-                                    Text(item.total, color = Color.Black, fontSize = 12.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
+                            if (uiState.status == InvoiceStatus.CANCELED) {
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.Center)
+                                        .rotate(-15f)
+                                        .border(4.dp, StampColor, RoundedCornerShape(8.dp))
+                                        .padding(horizontal = 24.dp, vertical = 8.dp)
+                                ) {
+                                    Text(
+                                        text = "CANCELED",
+                                        color = StampColor,
+                                        fontSize = 32.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        letterSpacing = 4.sp
+                                    )
                                 }
-                                Spacer(modifier = Modifier.height(8.dp))
                             }
+                        }
 
-                            Spacer(modifier = Modifier.height(8.dp))
-                            HorizontalDivider(color = BorderLight)
-                            Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(24.dp))
 
+                        if (uiState.status == InvoiceStatus.PENDING) {
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(OrangeBg)
+                                    .border(1.dp, OrangeText.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                                    .padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("Total", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
-                                Text(uiState.totalAmount, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = DarkGreen)
+                                Icon(Icons.Outlined.Timer, contentDescription = null, tint = OrangeText, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Active invoice — can be cancelled if needed", color = OrangeText, fontSize = 12.sp)
+                            }
+                        } else if (uiState.status == InvoiceStatus.CANCELED) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(RedBg)
+                                    .border(1.dp, RedText.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Outlined.Block, contentDescription = null, tint = RedText, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("This invoice was cancelled and can't be edited.", color = RedText, fontSize = 12.sp)
                             }
                         }
-                    }
 
-                    if (uiState.status == InvoiceStatus.CANCELED) {
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.Center)
-                                .rotate(-15f)
-                                .border(4.dp, StampColor, RoundedCornerShape(8.dp))
-                                .padding(horizontal = 24.dp, vertical = 8.dp)
-                        ) {
-                            Text(
-                                text = "CANCELED",
-                                color = StampColor,
-                                fontSize = 32.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                letterSpacing = 4.sp
-                            )
+                        Spacer(modifier = Modifier.height(32.dp))
+
+                        if (uiState.status == InvoiceStatus.PENDING) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Button(
+                                    onClick = { onShowCancelDialog(true) },
+                                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = RedText),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Text("Cancel Invoice", color = Color.White, fontSize = 14.sp)
+                                }
+                            }
                         }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                if (uiState.status == InvoiceStatus.PENDING) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(OrangeBg)
-                            .border(1.dp, OrangeText.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
-                            .padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Outlined.Timer, contentDescription = null, tint = OrangeText, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Awaiting payment — mark as paid once settled", color = OrangeText, fontSize = 12.sp)
-                    }
-                } else if (uiState.status == InvoiceStatus.CANCELED) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(RedBg)
-                            .border(1.dp, RedText.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
-                            .padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Outlined.Block, contentDescription = null, tint = RedText, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("This invoice was cancelled on ${uiState.cancelDate ?: "N/A"} and can't be edited or reissued.", color = RedText, fontSize = 12.sp)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                if (uiState.status == InvoiceStatus.PENDING) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Button(
-                            onClick = onMarkAsPaid,
-                            modifier = Modifier.weight(1f).height(50.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = DarkGreen),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Mark as Paid", fontSize = 14.sp)
-                        }
-
-                        OutlinedButton(
-                            onClick = { /* Share */ },
-                            modifier = Modifier.weight(0.4f).height(50.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            border = BorderStroke(1.dp, BorderLight),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black)
-                        ) {
-                            Icon(Icons.Outlined.Share, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Share", fontSize = 14.sp)
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    TextButton(
-                        onClick = { onShowCancelDialog(true) },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Cancel Invoice", color = RedText, fontSize = 14.sp)
-                    }
-                } else if (uiState.status == InvoiceStatus.CANCELED) {
-                    Button(
-                        onClick = { /* Create New */ },
-                        modifier = Modifier.fillMaxWidth().height(50.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = DarkGreen),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Create New Invoice For This Sale", fontSize = 14.sp)
                     }
                 }
             }
@@ -282,7 +266,7 @@ fun InvoiceDetailContent(
                 title = { Text("Cancel this invoice?", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
                 text = {
                     Text(
-                        "This can't be undone. Once cancelled, ${uiState.invoiceId} can never be reissued or edited — you'll need to create a brand new invoice for this sale if needed.",
+                        "This action cannot be undone.",
                         color = GrayText,
                         fontSize = 14.sp,
                         textAlign = TextAlign.Center
@@ -308,69 +292,5 @@ fun InvoiceDetailContent(
                 }
             )
         }
-    }
-}
-
-// ============================== Previews ============================== //
-
-@Preview(showBackground = true, name = "1. Pending Invoice Detail")
-@Composable
-fun InvoicePendingPreview() {
-    val mockUiState = InvoiceDetailUiState(
-        invoiceId = "INV-0142",
-        date = "Sep 8, 2026",
-        status = InvoiceStatus.PENDING,
-        billToName = "Mohammed Khalil",
-        billToPhone = "+970 599 000 000",
-        items = listOf(
-            InvoiceItemLine("Espresso Coffee", 2, "$10.00"),
-            InvoiceItemLine("Croissant", 3, "$15.00")
-        ),
-        totalAmount = "$25.00"
-    )
-    MaterialTheme {
-        InvoiceDetailContent(
-            uiState = mockUiState,
-            onShowCancelDialog = {}, onConfirmCancel = {}, onMarkAsPaid = {}, onNavigateBack = {}
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "2. Canceled Invoice Detail")
-@Composable
-fun InvoiceCanceledPreview() {
-    val mockUiState = InvoiceDetailUiState(
-        invoiceId = "INV-0141",
-        date = "Sep 3, 2026",
-        status = InvoiceStatus.CANCELED,
-        cancelDate = "Sep 4, 2026",
-        billToName = "Rana Nasser",
-        billToPhone = "+970 592 111 222",
-        items = listOf(
-            InvoiceItemLine("Cappuccino Large", 1, "$12.00")
-        ),
-        totalAmount = "$12.00"
-    )
-    MaterialTheme {
-        InvoiceDetailContent(
-            uiState = mockUiState,
-            onShowCancelDialog = {}, onConfirmCancel = {}, onMarkAsPaid = {}, onNavigateBack = {}
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "3. Cancel Confirmation Dialog")
-@Composable
-fun InvoiceDialogPreview() {
-    val mockUiState = InvoiceDetailUiState(
-        invoiceId = "INV-0142",
-        status = InvoiceStatus.PENDING,
-        showCancelDialog = true
-    )
-    MaterialTheme {
-        InvoiceDetailContent(
-            uiState = mockUiState,
-            onShowCancelDialog = {}, onConfirmCancel = {}, onMarkAsPaid = {}, onNavigateBack = {}
-        )
     }
 }

@@ -17,30 +17,36 @@ class ExpensesViewModel(
     val uiState: StateFlow<ExpensesUiState> = _uiState.asStateFlow()
 
     init {
-        fetchExpenses()
+        loadExpenses()
     }
 
-    fun fetchExpenses(category: String? = null) {
+    fun loadExpenses() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-            repository.getExpenses(category)
-                .onSuccess { dtoList ->
-                    val expenseItems = dtoList.map { dto ->
-                        ExpenseItem(
-                            id = dto.id,
-                            category = dto.category,
-                            description = dto.description.ifBlank { "No description" },
-                            amount = "$${dto.amount}",
-                            date = dto.expense_date
-                        )
+            repository.fetchExpenses()
+                .onSuccess { items ->
+                    val total = items.sumOf {
+                        it.amount.replace("$", "").replace("-", "").toDoubleOrNull() ?: 0.0
                     }
+                    val avg = if (items.isNotEmpty()) total / items.size else 0.0
+
+                    val groups = if (items.isNotEmpty()) {
+                        listOf(
+                            ExpenseGroup(
+                                dateHeader = "Recent Expenses",
+                                totalAmount = "-$$total",
+                                items = items
+                            )
+                        )
+                    } else emptyList()
 
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            expenses = expenseItems,
-                            isEmpty = expenseItems.isEmpty()
+                            totalExpenses = total,
+                            avgExpense = avg,
+                            expenseGroups = groups
                         )
                     }
                 }
@@ -48,10 +54,25 @@ class ExpensesViewModel(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = error.message ?: "Failed to load expenses"
+                            errorMessage = error.localizedMessage ?: "Failed to load expenses"
                         )
                     }
                 }
         }
+    }
+
+    fun onSearchQueryChange(query: String) {
+        _uiState.update { it.copy(searchQuery = query) }
+    }
+
+    // الدالة الأولى المفقودة
+    fun onDateFilterSelected(date: String) {
+        _uiState.update { it.copy(selectedDate = date) }
+    }
+
+    // الدالة الثانية المفقودة
+    fun onCategoryFilterSelected(category: String) {
+        _uiState.update { it.copy(selectedCategory = category) }
+        loadExpenses() // إعادة تحميل المصاريف بناءً على التصنيف المختار
     }
 }
